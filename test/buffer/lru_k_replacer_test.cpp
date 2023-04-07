@@ -16,7 +16,77 @@
 
 namespace bustub {
 
-TEST(LRUKReplacerTest, DISABLED_SampleTest) {
+TEST(LRUKReplacerTest, ConcurrentTest) {
+  const int num_runs = 50;
+  const int num_threads = 20;
+
+  // Run concurrent test multiple times to guarantee correctness.
+  for (int run = 0; run < num_runs; run++) {
+    auto replacer_ = std::make_unique<LRUKReplacer>(20, 2);
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+
+    for (int tid = 0; tid < num_threads; tid++) {
+      threads.emplace_back([tid, &replacer_]() {
+        replacer_->RecordAccess(tid);
+        replacer_->SetEvictable(tid, true);
+      });
+    }
+    for (int i = 0; i < num_threads; i++) {
+      threads[i].join();
+    }
+    threads.clear();
+
+    for (int tid = num_threads - 1; tid >= 0; tid--) {
+      threads.emplace_back([tid, &replacer_, num_threads]() {
+        replacer_->RecordAccess(tid);
+        if (tid + 1 < num_threads) replacer_->RecordAccess(tid + 1);
+        if (tid - 1 >= 0) replacer_->RecordAccess(tid - 1);
+      });
+    }
+    for (int i = 0; i < num_threads; i++) {
+      threads[i].join();
+    }
+
+    EXPECT_EQ(replacer_->Size(), 20);
+    //    for (int i = 0; i < num_threads; i++) {
+    //      int val;
+    //      EXPECT_TRUE(replacer_->Evict(&val));
+    //      EXPECT_EQ(i, val);
+    //    }
+  }
+}
+
+TEST(LRUKReplacerTest, Test1) {
+  LRUKReplacer lru_replacer(7, 2);
+  lru_replacer.RecordAccess(1);
+  lru_replacer.RecordAccess(2);
+  lru_replacer.RecordAccess(3);
+  lru_replacer.RecordAccess(4);
+  lru_replacer.RecordAccess(5);
+  lru_replacer.RecordAccess(6);
+  lru_replacer.RecordAccess(0);
+  lru_replacer.SetEvictable(1, true);
+  lru_replacer.SetEvictable(2, true);
+  lru_replacer.SetEvictable(3, true);
+  lru_replacer.SetEvictable(4, true);
+  lru_replacer.SetEvictable(5, true);
+  lru_replacer.SetEvictable(6, false);
+  lru_replacer.SetEvictable(0, true);
+
+  ASSERT_EQ(6, lru_replacer.Size());
+  lru_replacer.RecordAccess(1);
+
+  lru_replacer.Remove(2);
+  lru_replacer.Remove(3);
+  lru_replacer.Remove(4);
+  ASSERT_EQ(3, lru_replacer.Size());
+
+  lru_replacer.SetEvictable(3, true);
+  ASSERT_EQ(3, lru_replacer.Size());
+}
+
+TEST(LRUKReplacerTest, SampleTest) {
   LRUKReplacer lru_replacer(7, 2);
 
   // Scenario: add six elements to the replacer. We have [1,2,3,4,5]. Frame 6 is non-evictable.
@@ -32,6 +102,8 @@ TEST(LRUKReplacerTest, DISABLED_SampleTest) {
   lru_replacer.SetEvictable(4, true);
   lru_replacer.SetEvictable(5, true);
   lru_replacer.SetEvictable(6, false);
+
+  //  std::cout << "123\n";
   ASSERT_EQ(5, lru_replacer.Size());
 
   // Scenario: Insert access history for frame 1. Now frame 1 has two access histories.
@@ -40,6 +112,7 @@ TEST(LRUKReplacerTest, DISABLED_SampleTest) {
 
   // Scenario: Evict three pages from the replacer. Elements with max k-distance should be popped
   // first based on LRU.
+
   int value;
   lru_replacer.Evict(&value);
   ASSERT_EQ(2, value);
@@ -73,10 +146,12 @@ TEST(LRUKReplacerTest, DISABLED_SampleTest) {
 
   // Now we have [1,5,4]. Continue looking for victims.
   lru_replacer.SetEvictable(1, false);
+
   ASSERT_EQ(2, lru_replacer.Size());
   ASSERT_EQ(true, lru_replacer.Evict(&value));
   ASSERT_EQ(5, value);
   ASSERT_EQ(1, lru_replacer.Size());
+  //  std::cout << "123\n";
 
   // Update access history for 1. Now we have [4,1]. Next victim is 4.
   lru_replacer.RecordAccess(1);
@@ -90,7 +165,8 @@ TEST(LRUKReplacerTest, DISABLED_SampleTest) {
   lru_replacer.Evict(&value);
   ASSERT_EQ(value, 1);
   ASSERT_EQ(0, lru_replacer.Size());
-
+  //
+  //
   // These operations should not modify size
   ASSERT_EQ(false, lru_replacer.Evict(&value));
   ASSERT_EQ(0, lru_replacer.Size());

@@ -160,6 +160,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   /** List of free frames that don't have any pages on them. */
   std::list<frame_id_t> free_list_;
   /** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */
+  //  ReaderWriterLatch rwlatch_;
   std::mutex latch_;
 
   /**
@@ -175,6 +176,8 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   void DeallocatePage(__attribute__((unused)) page_id_t page_id) {
     // This is a no-nop right now without a more complex data structure to track deallocated pages
   }
+
+  auto ZeroPage(frame_id_t fid) -> void;
 
   // TODO(student): You may add additional private members and helper functions
 };

@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/rwlatch.h"
 #include "container/hash/hash_table.h"
 
 namespace bustub {
@@ -48,20 +49,20 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @brief Get the global depth of the directory.
    * @return The global depth of the directory.
    */
-  auto GetGlobalDepth() const -> int;
+  auto GetGlobalDepth() -> int;
 
   /**
    * @brief Get the local depth of the bucket that the given directory index points to.
    * @param dir_index The index in the directory.
    * @return The local depth of the bucket.
    */
-  auto GetLocalDepth(int dir_index) const -> int;
+  auto GetLocalDepth(int dir_index) -> int;
 
   /**
    * @brief Get the number of buckets in the directory.
    * @return The number of buckets in the directory.
    */
-  auto GetNumBuckets() const -> int;
+  auto GetNumBuckets() -> int;
 
   /**
    *
@@ -123,6 +124,10 @@ class ExtendibleHashTable : public HashTable<K, V> {
 
     inline auto GetItems() -> std::list<std::pair<K, V>> & { return list_; }
 
+    inline auto SetDepth(int depth) -> void { depth_ = depth; }
+
+    inline auto GetSize() const -> int { return list_.size(); }
+
     /**
      *
      * TODO(P1): Add implementation
@@ -157,6 +162,8 @@ class ExtendibleHashTable : public HashTable<K, V> {
      */
     auto Insert(const K &key, const V &value) -> bool;
 
+    std::shared_mutex bucket_latch_;
+
    private:
     // TODO(student): You may add additional private members and helper functions
     size_t size_;
@@ -171,16 +178,18 @@ class ExtendibleHashTable : public HashTable<K, V> {
   int global_depth_;    // The global depth of the directory
   size_t bucket_size_;  // The size of a bucket
   int num_buckets_;     // The number of buckets in the hash table
-  mutable std::mutex latch_;
+                        //  mutable std::mutex latch_;
+  int entries_;
   std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
-
+  ReaderWriterLatch rwlatch_;
+  //  std::mutex latch_;
   // The following functions are completely optional, you can delete them if you have your own ideas.
 
   /**
    * @brief Redistribute the kv pairs in a full bucket.
    * @param bucket The bucket to be redistributed.
    */
-  auto RedistributeBucket(std::shared_ptr<Bucket> bucket) -> void;
+  auto RedistributeBucket(std::shared_ptr<Bucket> bucket, int idx) -> void;
 
   /*****************************************************************
    * Must acquire latch_ first before calling the below functions. *
@@ -196,6 +205,9 @@ class ExtendibleHashTable : public HashTable<K, V> {
   auto GetGlobalDepthInternal() const -> int;
   auto GetLocalDepthInternal(int dir_index) const -> int;
   auto GetNumBucketsInternal() const -> int;
+  auto AddGlobalDepthInternal() -> void;
+  auto AddLocalDepthInternal(int dir_index) -> void;
+  auto SetBucketNumInternal() -> void;
 };
 
 }  // namespace bustub
