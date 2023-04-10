@@ -11,6 +11,7 @@
 #pragma once
 
 #include <queue>
+#include <vector>
 
 #include "storage/page/b_plus_tree_page.h"
 
@@ -40,10 +41,27 @@ class BPlusTreeInternalPage : public BPlusTreePage {
 
   auto KeyAt(int index) const -> KeyType;
   void SetKeyAt(int index, const KeyType &key);
+  void SetValueAt(int index, const ValueType &value);
   auto ValueAt(int index) const -> ValueType;
+  auto FindNextPid(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
+  auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> void;
+  auto CopyArray(MappingType *new_array, int sz) -> void;
+  auto CopyFromArray(MappingType *array, int sz) -> void;
+  auto SetChildrenParentId(BufferPoolManager *bpm) -> void;
+  auto FindSibling(BPlusTreePage *child, std::vector<page_id_t> &vec, std::vector<KeyType> &k_vec) -> bool;
+  auto GetArray() -> MappingType *;
+  auto Delete(const KeyType &key, const KeyComparator &comparator) -> bool;
+  auto ReplaceKey(const KeyType &key_old, const KeyType &key_new, const KeyComparator &comparator) -> void;
+  auto SetChildParent(int index, BufferPoolManager *bpm) -> void;
+  auto DeleteLast() -> void;
+  auto DeleteFirst() -> void;
+  auto InsertFirst(const KeyType &key, page_id_t page_id) -> void;
+  auto InsertLast(const KeyType &key, page_id_t page_id) -> void;
 
  private:
   // Flexible array member for page data.
-  MappingType array_[1];
+  //  MappingType array_[1];
+  // I changed the array max size
+  MappingType array_[INTERNAL_PAGE_SIZE];
 };
 }  // namespace bustub

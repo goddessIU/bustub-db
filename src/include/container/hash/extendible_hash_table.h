@@ -182,7 +182,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
   int entries_;
   std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
   ReaderWriterLatch rwlatch_;
-  //  std::mutex latch_;
+  std::mutex latch_;
   // The following functions are completely optional, you can delete them if you have your own ideas.
 
   /**

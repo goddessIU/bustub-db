@@ -21,10 +21,12 @@ BufferPoolManagerInstance::BufferPoolManagerInstance(size_t pool_size, DiskManag
                                                      LogManager *log_manager)
     : pool_size_(pool_size), disk_manager_(disk_manager), log_manager_(log_manager) {
   // we allocate a consecutive memory space for the buffer pool
+  //  std::cout << "hhhhh" << std::endl;
   pages_ = new Page[pool_size_];
+  //  std::cout << "hhhhh" << std::endl;
   page_table_ = new ExtendibleHashTable<page_id_t, frame_id_t>(bucket_size_);
   replacer_ = new LRUKReplacer(pool_size, replacer_k);
-
+  //  std::cout << "hhhhh" << std::endl;
   // Initially, every page is in the free list.
   for (size_t i = 0; i < pool_size_; ++i) {
     free_list_.emplace_back(static_cast<int>(i));

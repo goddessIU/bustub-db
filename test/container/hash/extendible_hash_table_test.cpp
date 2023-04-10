@@ -57,7 +57,7 @@ TEST(ExtendibleHashTableTest, Test2) {
   EXPECT_EQ(4, table->GetGlobalDepth());
 }
 
-TEST(ExtendibleHashTableTest, DISABLED_Test1) {
+TEST(ExtendibleHashTableTest, Test1) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(5);
   table->Insert(1, "a");
   table->Insert(2, "b");

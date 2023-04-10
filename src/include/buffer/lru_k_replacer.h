@@ -149,7 +149,7 @@ class LRUKReplacer {
   size_t replacer_size_;
   size_t k_;
   std::vector<struct Frame> frames_;
-  //  std::mutex latch_;
+  std::mutex latch_;
   std::shared_mutex mlatch_;
   //  ReaderWriterLatch rwlatch_;
   std::vector<std::mutex> locks_;

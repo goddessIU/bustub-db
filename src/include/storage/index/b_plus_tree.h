@@ -12,6 +12,7 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "concurrency/transaction.h"
@@ -48,8 +49,20 @@ class BPlusTree {
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
+  auto InsertInLeaf(LeafPage *l_node, const KeyType &key, const ValueType &value) -> void;
+  auto InsertInParent(BPlusTreePage *l_node, const KeyType &key, BPlusTreePage *r_node, page_id_t l_pid,
+                      page_id_t r_pid) -> void;
+
+  auto CopyArray(LeafPage *l_node, MappingType *new_array, int sz) -> void;
+  auto InsertINTemp(MappingType *temp_array, const KeyType &key, const ValueType &value) -> void;
+  auto InsertINTempInternal(std::pair<KeyType, page_id_t> *temp_array, const KeyType &key, const page_id_t &value)
+      -> void;
+
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *transaction = nullptr);
+  void DeleteEntry(BPlusTreePage *node, const KeyType &key);
+  auto CoalesceLeaf(BPlusTreePage *n1, BPlusTreePage *n2) -> void;
+  auto CoalesceInternal(BPlusTreePage *n1, BPlusTreePage *n2, const KeyType &key) -> void;
 
   // return the value associated with a given key
   auto GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr) -> bool;
@@ -76,6 +89,8 @@ class BPlusTree {
 
  private:
   void UpdateRootPageId(int insert_record = 0);
+
+  void UpdateRootPageIdWrapper(page_id_t root_page_id, int insert_record = 0);
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
