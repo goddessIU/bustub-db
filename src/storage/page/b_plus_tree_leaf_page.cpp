@@ -71,6 +71,13 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &val
     return;
   }
 
+  //  int sz = GetSize();
+  //  std::cout << "ok arr sz " << sz << "  ";
+  //  for (int i = 0; i < sz; i++) {
+  //    std::cout << i << "   " << array_[i].first << "   ";
+  //  }
+  //  std::cout << std::endl;
+
   int target = -1;
   for (int i = 0; i < GetSize(); i++) {
     if (comparator(key, array_[i].first) < 0) {
@@ -120,12 +127,29 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Find(const KeyType &key, std::vector<ValueType>
 }
 
 INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::FindIndex(const KeyType &key, const KeyComparator &comparator) -> int {
+  int sz = GetSize();
+  for (int i = 0; i < sz; i++) {
+    if (comparator(array_[i].first, key) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Erase() -> void { SetSize(0); }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Delete(const KeyType &key, const KeyComparator &comparator) -> bool {
   int sz = GetSize();
+  //  std::cout << "the key is " << key << "the sz is " << sz << std::endl;
   int target = -1;
+  //  std::cout << "key array: ";
+  //  for (int i = 0; i < sz; i++) {
+  //    std::cout << i << " is " << array_[i].first << " ";
+  //  }
+  //  std::cout << std::endl;
   for (int i = 0; i < sz; i++) {
     if (comparator(key, array_[i].first) == 0) {
       target = i;
@@ -141,6 +165,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Delete(const KeyType &key, const KeyComparator 
     array_[i] = array_[i + 1];
   }
   DecreaseSize(1);
+  //  std::cout << "delete the key " << key << std::endl;
   return true;
 }
 

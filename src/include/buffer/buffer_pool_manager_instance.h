@@ -163,6 +163,9 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   //  ReaderWriterLatch rwlatch_;
   std::mutex latch_;
 
+  int borrowed;
+  int backdded;
+  int deletddded;
   /**
    * @brief Allocate a page on disk. Caller should acquire the latch before calling this function.
    * @return the id of the allocated page

@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "common/exception.h"
+#include "common/logger.h"
 #include "storage/page/b_plus_tree_internal_page.h"
 
 namespace bustub {
@@ -114,6 +115,9 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindNextPid(const KeyType &key, const KeyComparator &comparator) const
     -> ValueType {
   int sz = GetSize();
+  if (sz <= 0) {
+    std::cout << "big wrong !" << std::endl;
+  }
   for (int i = 1; i < sz; i++) {
     if (comparator(key, array_[i].first) < 0) {
       return array_[i - 1].second;
@@ -141,7 +145,8 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetChildrenParentId(BufferPoolManager *bpm)
   for (int i = 0; i < sz; i++) {
     Page *p = bpm->FetchPage(array_[i].second);
     auto *bp = reinterpret_cast<BPlusTreePage *>(p->GetData());
-    bp->SetParentPageId(GetPageId());
+    int id = GetPageId();
+    bp->SetParentPageId(id);
     bpm->UnpinPage(p->GetPageId(), true);
   }
 }
@@ -153,6 +158,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindSibling(BPlusTreePage *child, std::vect
   int sz = GetSize();
   if (sz <= 1) {
     // must at least two child
+    std::cout << "oh no!" << std::endl;
     return false;
   }
 
@@ -183,7 +189,9 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindSibling(BPlusTreePage *child, std::vect
       break;
     }
   }
-
+  //  for (int i = 0; i < 2; i++) {
+  //    std::cout << "qq " << vec[i] << std::endl;
+  //  }
   return true;
 }
 
@@ -232,6 +240,12 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Delete(const KeyType &key, const KeyComparator &comparator) -> bool {
   int sz = GetSize();
   int target = -1;
+  //  std::cout << "the inter key is ";
+  //  for (int i = 1; i < sz; i++) {
+  //    std::cout << "index " << i << " is " << array_[i].first << "  ";
+  //  }
+  //  std::cout << std::endl;
+
   for (int i = 1; i < sz; i++) {
     if (comparator(key, array_[i].first) == 0) {
       target = i;
@@ -263,11 +277,13 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ReplaceKey(const KeyType &key_old, const Ke
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetChildParent(int index, BufferPoolManager *bpm) -> void {
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetChildParent(int index, BufferPoolManager *bpm)
+    -> void {
   Page *p = bpm->FetchPage(array_[index].second);
   auto *bp = reinterpret_cast<BPlusTreePage *>(p->GetData());
   bp->SetParentPageId(GetPageId());
   bpm->UnpinPage(p->GetPageId(), true);
+  //  p->WLatch();
 }
 
 // valuetype for internalNode should be page id_t

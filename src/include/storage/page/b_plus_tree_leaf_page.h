@@ -51,6 +51,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto KeyAt(int index) const -> KeyType;
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> void;
   auto Find(const KeyType &key, std::vector<ValueType> *result, const KeyComparator &comparator) -> bool;
+  auto FindIndex(const KeyType &key, const KeyComparator &comparator) -> int;
   auto CopyArray(MappingType *new_array, int sz) -> void;
   auto CopyFromArray(MappingType *array, int sz) -> void;
   auto Erase() -> void;

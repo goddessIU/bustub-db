@@ -59,9 +59,6 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   auto InsertLast(const KeyType &key, page_id_t page_id) -> void;
 
  private:
-  // Flexible array member for page data.
-  //  MappingType array_[1];
-  // I changed the array max size
   MappingType array_[INTERNAL_PAGE_SIZE];
 };
 }  // namespace bustub

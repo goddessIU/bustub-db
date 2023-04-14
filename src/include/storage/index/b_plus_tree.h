@@ -10,6 +10,7 @@
 //===----------------------------------------------------------------------===//
 #pragma once
 
+#include <deque>
 #include <queue>
 #include <string>
 #include <utility>
@@ -34,24 +35,41 @@ namespace bustub {
  * (3) The structure should shrink and grow dynamically
  * (4) Implement index iterator for range scan
  */
+
+INDEX_TEMPLATE_ARGUMENTS
+class IndexIterator;
+
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTree {
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
+  using IndexItr = IndexIterator<KeyType, ValueType, KeyComparator>;
+  //  struct delete_latch_{
+  //    Page* page;
+  //    int state{0};
+  //  };
 
  public:
+  struct delete_latch_ {
+    Page *page;
+    int state{0};
+  };
+
   explicit BPlusTree(std::string name, BufferPoolManager *buffer_pool_manager, const KeyComparator &comparator,
                      int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
 
   // Returns true if this B+ tree has no keys and values.
-  auto IsEmpty() const -> bool;
+  auto IsEmpty() -> bool;
 
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
+  auto UnlockLatches(int op, bool is_dirty, Transaction *transaction) -> void;
+  auto UnlockWholeLatches(int op, bool is_dirty, Transaction *transaction) -> void;
+
   auto InsertInLeaf(LeafPage *l_node, const KeyType &key, const ValueType &value) -> void;
   auto InsertInParent(BPlusTreePage *l_node, const KeyType &key, BPlusTreePage *r_node, page_id_t l_pid,
-                      page_id_t r_pid) -> void;
+                      page_id_t r_pid, Transaction *transaction) -> void;
 
   auto CopyArray(LeafPage *l_node, MappingType *new_array, int sz) -> void;
   auto InsertINTemp(MappingType *temp_array, const KeyType &key, const ValueType &value) -> void;
@@ -60,7 +78,7 @@ class BPlusTree {
 
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *transaction = nullptr);
-  void DeleteEntry(BPlusTreePage *node, const KeyType &key);
+  void DeleteEntry(BPlusTreePage *node, const KeyType &key, Transaction *transaction);
   auto CoalesceLeaf(BPlusTreePage *n1, BPlusTreePage *n2) -> void;
   auto CoalesceInternal(BPlusTreePage *n1, BPlusTreePage *n2, const KeyType &key) -> void;
 
@@ -71,9 +89,9 @@ class BPlusTree {
   auto GetRootPageId() -> page_id_t;
 
   // index iterator
-  auto Begin() -> INDEXITERATOR_TYPE;
-  auto Begin(const KeyType &key) -> INDEXITERATOR_TYPE;
-  auto End() -> INDEXITERATOR_TYPE;
+  auto Begin() -> IndexItr;
+  auto Begin(const KeyType &key) -> IndexItr;
+  auto End() -> IndexItr;
 
   // print the B+ tree
   void Print(BufferPoolManager *bpm);
@@ -91,6 +109,7 @@ class BPlusTree {
   void UpdateRootPageId(int insert_record = 0);
 
   void UpdateRootPageIdWrapper(page_id_t root_page_id, int insert_record = 0);
+  page_id_t GetRootPageIdWrapper();
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
@@ -104,6 +123,10 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  std::mutex root_latch_;
+  ReaderWriterLatch temp_latch_;
+  //  ReaderWriterLatch v_root_lock_;
+  //  int v_lock_num_;
 };
 
 }  // namespace bustub

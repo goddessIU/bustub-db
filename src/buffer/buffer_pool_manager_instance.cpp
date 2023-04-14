@@ -13,6 +13,7 @@
 #include "buffer/buffer_pool_manager_instance.h"
 
 #include "common/exception.h"
+#include "common/logger.h"
 #include "common/macros.h"
 
 namespace bustub {
@@ -31,9 +32,14 @@ BufferPoolManagerInstance::BufferPoolManagerInstance(size_t pool_size, DiskManag
   for (size_t i = 0; i < pool_size_; ++i) {
     free_list_.emplace_back(static_cast<int>(i));
   }
+
+  borrowed = 0;
+  backdded = 0;
+  deletddded = 0;
 }
 
 BufferPoolManagerInstance::~BufferPoolManagerInstance() {
+  //  std::cout << "releas " << borrowed << "   back: " << backdded << " delete " << deletddded << std::endl;
   delete[] pages_;
   delete page_table_;
   delete replacer_;
@@ -52,6 +58,7 @@ auto BufferPoolManagerInstance::NewPgImp(page_id_t *page_id) -> Page * {
     // If the replacement frame has a dirty page,
     //    * you should write it back to the disk first.
     if (!replacer_->Evict(&fid)) {
+      std::cout << "oop no new page" << std::endl;
       //      rwlatch_.WUnlock();
       return nullptr;
     }
@@ -88,6 +95,9 @@ auto BufferPoolManagerInstance::NewPgImp(page_id_t *page_id) -> Page * {
 
   //  pages_[fid].WUnlatch();
   *page_id = pid;
+
+  borrowed++;
+  //  LOG_INFO("page %d", pid);
   return &pages_[fid];
 }
 
@@ -109,6 +119,7 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
       // If the replacement frame has a dirty page,
       //    * you should write it back to the disk first.
       if (!replacer_->Evict(&fid)) {
+        std::cout << "oop no page" << std::endl;
         //        rwlatch_.WUnlock();
         return nullptr;
       }
@@ -151,6 +162,8 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
   pages_[frame_id].page_id_ = page_id;
 
   //  pages_[frame_id].WUnlatch();
+  borrowed++;
+  //  LOG_INFO("page %d", page_id);
 
   return pages_ + frame_id;
 }
@@ -187,6 +200,8 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
   //  } else {
   //    pages_[frame_id].WUnlatch();
   //  }
+  backdded++;
+  //  LOG_INFO("upage %d", page_id);
 
   return true;
 }
@@ -253,6 +268,9 @@ auto BufferPoolManagerInstance::DeletePgImp(page_id_t page_id) -> bool {
 
   free_list_.push_back(frame_id);
   DeallocatePage(page_id);
+
+  deletddded++;
+  //  LOG_INFO("delete page %d", page_id);
   //  rwlatch_.WUnlock();
   return true;
 }
