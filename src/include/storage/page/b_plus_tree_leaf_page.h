@@ -51,7 +51,6 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto KeyAt(int index) const -> KeyType;
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> void;
   auto Find(const KeyType &key, std::vector<ValueType> *result, const KeyComparator &comparator) -> bool;
-  auto FindIndex(const KeyType &key, const KeyComparator &comparator) -> int;
   auto CopyArray(MappingType *new_array, int sz) -> void;
   auto CopyFromArray(MappingType *array, int sz) -> void;
   auto Erase() -> void;
@@ -63,12 +62,10 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto DeleteFirst() -> void;
   auto InsertFirst(const KeyType &key, const ValueType &value) -> void;
   auto InsertLast(const KeyType &key, const ValueType &value) -> void;
+  auto FindIndex(const KeyType &key, const KeyComparator &comparator) -> int;
 
  private:
   page_id_t next_page_id_;
-  // Flexible array member for page data.
-  //  MappingType array_[1];
-  // I changed the array max size
   MappingType array_[LEAF_PAGE_SIZE];
 };
 }  // namespace bustub

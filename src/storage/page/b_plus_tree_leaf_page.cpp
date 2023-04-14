@@ -33,7 +33,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetMaxSize(max_size);
   SetPageId(page_id);
   SetParentPageId(parent_id);
-  // maybe wrong?
   SetNextPageId(INVALID_PAGE_ID);
 }
 
@@ -71,39 +70,35 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &val
     return;
   }
 
-  //  int sz = GetSize();
-  //  std::cout << "ok arr sz " << sz << "  ";
-  //  for (int i = 0; i < sz; i++) {
-  //    std::cout << i << "   " << array_[i].first << "   ";
-  //  }
-  //  std::cout << std::endl;
-
-  int target = -1;
-  for (int i = 0; i < GetSize(); i++) {
-    if (comparator(key, array_[i].first) < 0) {
-      target = i;
-      break;
+  int sz = GetSize();
+  int left = 0;
+  int right = sz - 1;
+  while (left <= right) {
+    int mid = (left + right) / 2;
+    int res = comparator(key, array_[mid].first);
+    if (res < 0) {
+      right = mid - 1;
+    } else if (res == 0) {
+      return;
+    } else {
+      left = mid + 1;
     }
   }
 
-  if (target == -1) {
-    // insert at the end
-    MappingType m = std::make_pair(key, value);
-    array_[GetSize()] = m;
-  } else {
-    // insert at target
-    for (int i = GetSize(); i > target; i--) {
-      array_[i] = array_[i - 1];
-    }
-    array_[target] = std::make_pair(key, value);
+  int target = left;
+  if (target < 0) {
+    return;
   }
+  for (int i = GetSize(); i > target; i--) {
+    array_[i] = array_[i - 1];
+  }
+  array_[target] = std::make_pair(key, value);
 
   IncreaseSize(1);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::CopyArray(MappingType *new_array, int sz) -> void {
-  // maybe is wrong
   std::copy(array_, array_ + sz, new_array);
 }
 
@@ -114,27 +109,38 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFromArray(MappingType *array, int sz) -> vo
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::Find(const KeyType &key, std::vector<ValueType> *result,
-                                      const KeyComparator &comparator) -> bool {
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::FindIndex(const KeyType &key, const KeyComparator &comparator) -> int {
   int sz = GetSize();
-  for (int i = 0; i < sz; i++) {
-    if (comparator(key, array_[i].first) == 0) {
-      result->push_back(array_[i].second);
-      return true;
+
+  int left = 0;
+  int right = sz - 1;
+  int mid;
+  while (left <= right) {
+    mid = (left + right) / 2;
+    int res = comparator(key, array_[mid].first);
+    if (res < 0) {
+      right = mid - 1;
+    } else if (res == 0) {
+      return mid;
+    } else {
+      left = mid + 1;
     }
   }
-  return false;
+
+  return -1;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::FindIndex(const KeyType &key, const KeyComparator &comparator) -> int {
-  int sz = GetSize();
-  for (int i = 0; i < sz; i++) {
-    if (comparator(array_[i].first, key) == 0) {
-      return i;
-    }
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Find(const KeyType &key, std::vector<ValueType> *result,
+                                      const KeyComparator &comparator) -> bool {
+  int idx = FindIndex(key, comparator);
+
+  if (idx == -1) {
+    return false;
   }
-  return -1;
+
+  result->push_back(array_[idx].second);
+  return true;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -142,30 +148,16 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Erase() -> void { SetSize(0); }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Delete(const KeyType &key, const KeyComparator &comparator) -> bool {
-  int sz = GetSize();
-  //  std::cout << "the key is " << key << "the sz is " << sz << std::endl;
-  int target = -1;
-  //  std::cout << "key array: ";
-  //  for (int i = 0; i < sz; i++) {
-  //    std::cout << i << " is " << array_[i].first << " ";
-  //  }
-  //  std::cout << std::endl;
-  for (int i = 0; i < sz; i++) {
-    if (comparator(key, array_[i].first) == 0) {
-      target = i;
-      break;
-    }
-  }
-
+  int target = FindIndex(key, comparator);
   if (target == -1) {
     return false;
   }
 
+  int sz = GetSize();
   for (int i = target; i < sz - 1; i++) {
     array_[i] = array_[i + 1];
   }
   DecreaseSize(1);
-  //  std::cout << "delete the key " << key << std::endl;
   return true;
 }
 

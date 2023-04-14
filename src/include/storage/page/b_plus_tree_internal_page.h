@@ -40,8 +40,6 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = INTERNAL_PAGE_SIZE);
 
   auto KeyAt(int index) const -> KeyType;
-  void SetKeyAt(int index, const KeyType &key);
-  void SetValueAt(int index, const ValueType &value);
   auto ValueAt(int index) const -> ValueType;
   auto FindNextPid(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> void;
@@ -57,6 +55,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   auto DeleteFirst() -> void;
   auto InsertFirst(const KeyType &key, page_id_t page_id) -> void;
   auto InsertLast(const KeyType &key, page_id_t page_id) -> void;
+  auto GetIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
 
  private:
   MappingType array_[INTERNAL_PAGE_SIZE];

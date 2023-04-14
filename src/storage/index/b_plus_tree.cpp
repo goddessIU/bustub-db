@@ -170,49 +170,85 @@ auto BPLUSTREE_TYPE::InsertInParent(BPlusTreePage *l_node, const KeyType &key, B
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::InsertINTemp(MappingType *temp_array, const KeyType &key, const ValueType &value) -> void {
-  int target = -1;
-  for (int i = 0; i < leaf_max_size_; i++) {
-    if (comparator_(key, temp_array[i].first) < 0) {
-      target = i;
-      break;
+  //  int target = -1;
+  //  for (int i = 0; i < leaf_max_size_; i++) {
+  //    if (comparator_(key, temp_array[i].first) < 0) {
+  //      target = i;
+  //      break;
+  //    }
+  //  }
+
+  int left = 0;
+  int right = leaf_max_size_ - 1;
+  while (left <= right) {
+    int mid = (left + right) / 2;
+    int res = comparator_(key, temp_array[mid].first);
+    if (res < 0) {
+      right = mid - 1;
+    } else if (res == 0) {
+      return;
+    } else {
+      left = mid + 1;
     }
   }
 
-  if (target == -1) {
-    // insert at the end
-    temp_array[leaf_max_size_] = std::make_pair(key, value);
-  } else {
-    // insert at target
-    // careful, this is unsigned long
-    for (int i = leaf_max_size_; i > target; i--) {
-      temp_array[i] = temp_array[i - 1];
-    }
-    temp_array[target] = std::make_pair(key, value);
+  int target = left;
+  if (target < 0) {
+    return;
   }
+  for (int i = leaf_max_size_; i > target; i--) {
+    temp_array[i] = temp_array[i - 1];
+  }
+  temp_array[target] = std::make_pair(key, value);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::InsertINTempInternal(std::pair<KeyType, page_id_t> *temp_array, const KeyType &key,
                                           const page_id_t &value) -> void {
-  int target = 0;
-  for (int i = 1; i < internal_max_size_; i++) {
-    if (comparator_(key, temp_array[i].first) < 0) {
-      target = i;
+  //  int target = 0;
+  //  for (int i = 1; i < internal_max_size_; i++) {
+  //    if (comparator_(key, temp_array[i].first) < 0) {
+  //      target = i;
+  //      break;
+  //    }
+  //  }
+
+  int left = 1;
+  int right = internal_max_size_ - 1;
+  int mid;
+  int target = -1;
+  while (left <= right) {
+    mid = (left + right) / 2;
+    int res = comparator_(key, temp_array[mid].first);
+    if (res < 0) {
+      right = mid - 1;
+    } else if (res == 0) {
+      target = mid + 1;
       break;
+    } else {
+      left = mid + 1;
     }
   }
 
-  if (target == 0) {
-    // insert at the end
-    temp_array[internal_max_size_] = std::make_pair(key, value);
-  } else {
-    // insert at target
-    // careful, this is unsigned long
-    for (int i = internal_max_size_; i > target; i--) {
-      temp_array[i] = temp_array[i - 1];
-    }
-    temp_array[target] = std::make_pair(key, value);
+  if (target == -1) {
+    target = left;
   }
+
+  for (int i = internal_max_size_; i > target; i--) {
+    temp_array[i] = temp_array[i - 1];
+  }
+  temp_array[target] = std::make_pair(key, value);
+
+  //  if (target == 0) {
+  //    // insert at the end
+  //    temp_array[internal_max_size_] = std::make_pair(key, value);
+  //  } else {
+  //    // insert at target
+  //    for (int i = internal_max_size_; i > target; i--) {
+  //      temp_array[i] = temp_array[i - 1];
+  //    }
+  //    temp_array[target] = std::make_pair(key, value);
+  //  }
 }
 
 /*
@@ -279,8 +315,6 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   Page *node;
   LeafPage *l_node;
   std::vector<ValueType> vec{};
-  // I don't know why can't be a reference
-  std::deque<Page *> latches{};
 
   // get root id
   root_latch_.lock();
@@ -294,8 +328,6 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
 
     node->WLatch();
     transaction->AddIntoPageSet(node);
-    // cast page->data to leaf page, and init it
-
   } else {
     // fetch and lock
     page_id_t root_page_id = root_page_id_;
@@ -582,7 +614,7 @@ void BPLUSTREE_TYPE::DeleteEntry(BPlusTreePage *node, const KeyType &key, Transa
       } else if (idx == 1) {
         transaction->AddIntoDeletedPageSet(sibling_id);
       } else {
-        throw "rinima";
+        throw "idx should 0 or 1";
       }
     } else {
       if (vec[0] != INVALID_PAGE_ID) {
@@ -608,9 +640,9 @@ void BPLUSTREE_TYPE::DeleteEntry(BPlusTreePage *node, const KeyType &key, Transa
           reinterpret_cast<InternalPage *>(parent_node)->ReplaceKey(k_vec[idx], k1, comparator_);
 
           // unlock it in the remove
-          sibling_page->WUnlatch();
-          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
-          buffer_pool_manager_->UnpinPage(parent_id, true);
+          //          sibling_page->WUnlatch();
+          //          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
+          //          buffer_pool_manager_->UnpinPage(parent_id, true);
         } else {
           auto sibling_internal_node = reinterpret_cast<InternalPage *>(sibling_node);
           KeyType k1 = sibling_internal_node->KeyAt(sibling_internal_node->GetSize() - 1);
@@ -621,9 +653,9 @@ void BPLUSTREE_TYPE::DeleteEntry(BPlusTreePage *node, const KeyType &key, Transa
           reinterpret_cast<InternalPage *>(parent_node)->ReplaceKey(k_vec[idx], k1, comparator_);
 
           // unlock it the in remove
-          sibling_page->WUnlatch();
-          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
-          buffer_pool_manager_->UnpinPage(parent_id, true);
+          //          sibling_page->WUnlatch();
+          //          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
+          //          buffer_pool_manager_->UnpinPage(parent_id, true);
         }
       } else {
         // symmetric of above
@@ -637,9 +669,9 @@ void BPLUSTREE_TYPE::DeleteEntry(BPlusTreePage *node, const KeyType &key, Transa
               ->ReplaceKey(k_vec[idx], sibling_leaf_node->KeyAt(0), comparator_);
 
           // unlock it in remove
-          sibling_page->WUnlatch();
-          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
-          buffer_pool_manager_->UnpinPage(parent_id, true);
+          //          sibling_page->WUnlatch();
+          //          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
+          //          buffer_pool_manager_->UnpinPage(parent_id, true);
         } else {
           auto sibling_internal_node = reinterpret_cast<InternalPage *>(sibling_node);
           KeyType k1 = sibling_internal_node->KeyAt(1);
@@ -650,11 +682,15 @@ void BPLUSTREE_TYPE::DeleteEntry(BPlusTreePage *node, const KeyType &key, Transa
           reinterpret_cast<InternalPage *>(parent_node)->ReplaceKey(k_vec[idx], k1, comparator_);
 
           // unlock it in remove
-          sibling_page->WUnlatch();
-          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
-          buffer_pool_manager_->UnpinPage(parent_id, true);
+          //          sibling_page->WUnlatch();
+          //          buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
+          //          buffer_pool_manager_->UnpinPage(parent_id, true);
         }
       }
+
+      sibling_page->WUnlatch();
+      buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(), true);
+      buffer_pool_manager_->UnpinPage(parent_id, true);
     }
   }
 }

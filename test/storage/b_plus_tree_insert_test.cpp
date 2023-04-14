@@ -347,6 +347,24 @@ TEST(BPlusTreeTests, InsertTest2) {
   remove("test.log");
 }
 
+void InsertHelper1(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, const std::vector<int64_t> &keys,
+                   uint64_t tid, BufferPoolManager *bpm, __attribute__((unused)) uint64_t thread_itr = 0) {
+  GenericKey<8> index_key;
+  RID rid;
+  // create transaction
+  Transaction *transaction = new Transaction(tid);
+  for (int i = 0; i < static_cast<int>(keys.size()); i++) {
+    auto key = keys[i];
+    int64_t value = key & 0xFFFFFFFF;
+    rid.Set(static_cast<int32_t>(key >> 32), value);
+    index_key.SetFromInteger(key);
+    tree->Insert(index_key, rid, transaction);
+    //    tree->Draw(bpm, std::to_string(i) + ".dot");
+    //    tree->Print(bpm);
+  }
+  delete transaction;
+}
+
 /*
  * Score: 5
  * Description: The same test that has been run for checkpoint 1
@@ -362,7 +380,7 @@ TEST(BPlusTreeTests, InsertTest22) {
   BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
   // create b+ tree
   BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 5, 5);
-  GenericKey<8> index_key;
+  //  GenericKey<8> index_key;
   RID rid;
   // create transaction
   Transaction *transaction = new Transaction(0);
@@ -372,31 +390,26 @@ TEST(BPlusTreeTests, InsertTest22) {
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
 
-  std::vector<int64_t> keys = {
-      481, 297, 555, 32,  753, 851, 296, 963, 906, 698, 945, 248, 876, 438, 947, 913, 206, 251, 615, 142,  179, 43,
-      670, 726, 388, 639, 812, 778, 262, 973, 325, 811, 71,  511, 870, 174, 50,  744, 689, 654, 489, 937,  514, 55,
-      3,   602, 151, 953, 431, 107, 414, 915, 61,  668, 354, 542, 930, 506, 831, 383, 123, 36,  197, 496,  273, 900,
-      545, 838, 175, 361, 539, 727, 222, 422, 957, 427, 798, 756, 562, 338, 931, 936, 271, 481, 30,  908,  266, 377,
-      113, 77,  101, 152, 772, 900, 366, 374, 665, 221, 504, 568, 753, 963, 109, 692, 455, 48,  752, 1000, 829, 31,
-      223, 471, 785, 109, 803, 54,  281, 696, 532, 961, 356, 550, 11,  259, 912, 177, 511, 919, 949, 562,  522, 556,
-      905, 322, 874, 480, 167, 848, 63,  712, 994, 996, 366, 233, 452, 565, 930, 451, 20,  172, 255, 903,  125, 819,
-      708, 814, 398, 752, 171, 701, 35,  140, 110, 328, 478, 98,  957, 418, 771, 518, 698, 988, 913, 402,  510, 738,
-      663, 951, 134, 793, 239, 423, 246, 496, 179, 736, 269, 319, 414, 681, 240, 798, 253, 715, 41,  644,  117, 421,
-      346, 39,  981, 62,  951, 191, 662, 460, 682, 907, 58,  124, 813, 671, 386, 166, 835, 401, 9,   2,    759, 817,
-      637, 161, 565, 869, 156, 585, 8,   347, 863, 996, 283, 623, 321, 828, 136, 428, 733, 890, 172, 238,  872, 678,
-      148, 330, 933, 168, 729, 812, 149, 688, 779, 266, 582, 523, 752, 409, 576, 620, 329, 98,  189, 39,   378, 303,
-      567, 547, 342, 425, 891, 651, 789, 597, 570, 61,  841, 228, 242, 325, 649, 628, 88,  575, 910, 965,  456, 459,
-      328, 110, 862, 297, 71,  647, 48,  744, 755, 101, 103, 391, 632, 390, 512, 426, 381, 661, 492, 504,  23,  688,
-      536, 248, 130, 152, 678, 72,  336, 232, 534, 109, 251, 808, 330, 41,  803, 37,  596, 956, 320, 888,  998, 726,
-      704, 920, 872, 375, 248, 236, 721, 332, 32,  424, 669, 306, 166, 117, 951, 363, 218, 101, 567, 236,  477, 509,
-      52,  818, 521, 559, 343, 162, 354, 924, 224, 408, 890, 337, 68,  386, 961, 899, 693};
-  for (int i = 0; i < static_cast<int>(keys.size()); i++) {
-    auto key = keys[i];
-    int64_t value = key & 0xFFFFFFFF;
-    rid.Set(static_cast<int32_t>(key >> 32), value);
-    index_key.SetFromInteger(key);
-    tree.Insert(index_key, rid, transaction);
+  std::vector<int64_t> for_insert;
+  std::vector<int64_t> for_delete;
+  size_t sieve = 2;  // divide evenly
+  size_t total_keys = 100;
+  for (size_t i = 1; i <= total_keys; i++) {
+    if (i % sieve == 0) {
+      for_insert.push_back(i);
+    } else {
+      for_delete.push_back(i);
+    }
   }
+  InsertHelper1(&tree, for_delete, 0, bpm);
+  int size = 0;
+
+  for (auto iterator = tree.Begin(); iterator != tree.End(); ++iterator) {
+    EXPECT_EQ(((*iterator).first).ToString(), for_delete[size]);
+    size++;
+  }
+
+  EXPECT_EQ(size, for_insert.size());
 
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete transaction;
