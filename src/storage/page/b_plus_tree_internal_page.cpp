@@ -118,13 +118,34 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindNextPid(const KeyType &key, const KeyCo
   if (sz <= 0) {
     std::cout << "big wrong !" << std::endl;
   }
-  for (int i = 1; i < sz; i++) {
-    if (comparator(key, array_[i].first) < 0) {
-      return array_[i - 1].second;
+  int left = 1, right = sz - 1;
+  if (comparator(key, array_[1].first) <= 0) {
+    return array_[0].second;
+  } else {
+    return array_[1].second;
+  }
+
+  int mid;
+  while (left < right) {
+    mid = (left + right) / 2;
+    int res = comparator(key, array_[mid].first);
+    if (res < 0) {
+      right = mid - 1;
+    } else if (res == 0) {
+      return array_[mid - 1].second;
+    } else {
+      left = mid + 1;
     }
   }
 
-  return array_[sz - 1].second;
+//  for (int i = 1; i < sz; i++) {
+//    if (comparator(key, array_[i].first) < 0) {
+//      return array_[i - 1].second;
+//    }
+//  }
+
+//  return array_[sz - 1].second;
+  return array_[left - 1].second;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -277,8 +298,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ReplaceKey(const KeyType &key_old, const Ke
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetChildParent(int index, BufferPoolManager *bpm)
-    -> void {
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetChildParent(int index, BufferPoolManager *bpm) -> void {
   Page *p = bpm->FetchPage(array_[index].second);
   auto *bp = reinterpret_cast<BPlusTreePage *>(p->GetData());
   bp->SetParentPageId(GetPageId());

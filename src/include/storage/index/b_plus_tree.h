@@ -44,17 +44,8 @@ class BPlusTree {
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
   using IndexItr = IndexIterator<KeyType, ValueType, KeyComparator>;
-  //  struct delete_latch_{
-  //    Page* page;
-  //    int state{0};
-  //  };
 
  public:
-  struct delete_latch_ {
-    Page *page;
-    int state{0};
-  };
-
   explicit BPlusTree(std::string name, BufferPoolManager *buffer_pool_manager, const KeyComparator &comparator,
                      int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
 
@@ -109,7 +100,7 @@ class BPlusTree {
   void UpdateRootPageId(int insert_record = 0);
 
   void UpdateRootPageIdWrapper(page_id_t root_page_id, int insert_record = 0);
-  page_id_t GetRootPageIdWrapper();
+  auto GetRootPageIdWrapper() -> page_id_t;
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
@@ -124,9 +115,6 @@ class BPlusTree {
   int leaf_max_size_;
   int internal_max_size_;
   std::mutex root_latch_;
-  ReaderWriterLatch temp_latch_;
-  //  ReaderWriterLatch v_root_lock_;
-  //  int v_lock_num_;
 };
 
 }  // namespace bustub
