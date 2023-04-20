@@ -27,8 +27,6 @@
 #include "type/value_factory.h"
 
 namespace bustub {
-struct HashJoinKey;
-
 /**
  * HashJoinExecutor executes a nested-loop JOIN on two tables.
  */
