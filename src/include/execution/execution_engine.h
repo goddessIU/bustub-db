@@ -56,7 +56,6 @@ class ExecutionEngine {
 
     // Construct the executor for the abstract plan node
     auto executor = ExecutorFactory::CreateExecutor(exec_ctx, plan);
-
     // Initialize the executor
     auto executor_succeeded = true;
 

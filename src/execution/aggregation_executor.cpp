@@ -18,11 +18,45 @@ namespace bustub {
 
 AggregationExecutor::AggregationExecutor(ExecutorContext *exec_ctx, const AggregationPlanNode *plan,
                                          std::unique_ptr<AbstractExecutor> &&child)
-    : AbstractExecutor(exec_ctx) {}
+    : AbstractExecutor(exec_ctx),
+      plan_(plan),
+      child_(std::move(child)),
+      aht_(plan->GetAggregates(), plan->GetAggregateTypes()),
+      aht_iterator_(aht_.Begin()),
+      has_tuple_(false) {}
 
-void AggregationExecutor::Init() {}
+void AggregationExecutor::Init() {
+  child_->Init();
+  aht_.Clear();
 
-auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool { return false; }
+  Tuple tuple;
+  RID rid;
+
+  while (child_->Next(&tuple, &rid)) {
+    has_tuple_ = true;
+    aht_.InsertCombine(MakeAggregateKey(&tuple), MakeAggregateValue(&tuple));
+  }
+
+  if (!has_tuple_ && plan_->GetGroupBys().empty()) {
+    aht_.InsertWithoutCombine(MakeAggregateKey(&tuple));
+  }
+
+  aht_iterator_ = aht_.Begin();
+}
+
+auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+  if (aht_iterator_ == aht_.End()) {
+    return false;
+  }
+
+  std::vector<Value> vec = aht_iterator_.Key().group_bys_;
+  std::copy(aht_iterator_.Val().aggregates_.begin(), aht_iterator_.Val().aggregates_.end(), std::back_inserter(vec));
+  Tuple t(vec, &(plan_->OutputSchema()));
+  *tuple = t;
+  (*rid).Set(tuple->GetRid().GetPageId(), tuple->GetRid().GetSlotNum());
+  ++aht_iterator_;
+  return true;
+}
 
 auto AggregationExecutor::GetChildExecutor() const -> const AbstractExecutor * { return child_.get(); }
 

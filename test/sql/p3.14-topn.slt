@@ -309,6 +309,20 @@ select colA from (select colC, colA, colB, from temp_2 order by colC - colB + co
 71
 37
 
+#statement ok
+#create table temp_6(colA int, colB int, colC int, colD int);
+#
+#statement ok
+#insert into temp_6 values
+#                (73, 1, 1, 1),
+#                (18, 2, 2, 2),
+#                (5, 5, 5, 5);
+
+# Repeat
+#query rowsort
+#explain select * from temp_2 t2, (select * from temp_1 order by colB desc, colC asc limit 20) t1 where t2.colA = t1.colA;
+#----
+
 # Repeat
 query rowsort +ensure:topn
 select * from temp_2 t2, (select * from temp_1 order by colB desc, colC asc limit 20) t1 where t2.colA = t1.colA;

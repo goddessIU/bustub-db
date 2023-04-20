@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <queue>
 #include <vector>
 
 #include "execution/executor_context.h"
@@ -52,5 +53,35 @@ class TopNExecutor : public AbstractExecutor {
  private:
   /** The topn plan node to be executed */
   const TopNPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  std::function<bool(Tuple &, Tuple &)> compare_func_ = [this](Tuple &left, Tuple &right) -> bool {
+    for (auto &comp : plan_->GetOrderBy()) {
+      Value left_val = comp.second->Evaluate(&left, plan_->OutputSchema());
+      Value right_val = comp.second->Evaluate(&right, plan_->OutputSchema());
+      if (comp.first == OrderByType::DESC) {
+        if (left_val.CompareLessThan(right_val) == CmpBool::CmpTrue) {
+          return false;
+        }
+
+        if (left_val.CompareGreaterThan(right_val) == CmpBool::CmpTrue) {
+          return true;
+        }
+      } else {
+        if (left_val.CompareGreaterThan(right_val) == CmpBool::CmpTrue) {
+          return false;
+        }
+
+        if (left_val.CompareLessThan(right_val) == CmpBool::CmpTrue) {
+          return true;
+        }
+      }
+    }
+
+    return true;
+  };
+  std::priority_queue<Tuple, std::vector<Tuple>, decltype(compare_func_)> heap_{compare_func_};
+  size_t num_{0};
+  std::vector<Tuple> tuples_;
+  int idx_{0};
 };
 }  // namespace bustub

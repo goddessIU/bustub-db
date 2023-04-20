@@ -56,10 +56,10 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     }
     root_latch_.unlock();
     if (!t) {
-      c_page->WUnlatch();
+      c_page->RUnlatch();
       buffer_pool_manager_->UnpinPage(c_page->GetPageId(), false);
       c_page = buffer_pool_manager_->FetchPage(root_page_id);
-      c_page->WLatch();
+      c_page->RLatch();
     }
     root_latch_.lock();
     if (root_page_id == root_page_id_) {
@@ -325,7 +325,6 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     l_node = reinterpret_cast<LeafPage *>(node->GetData());
     l_node->Init(root_page_id_, INVALID_PAGE_ID, leaf_max_size_);
     root_latch_.unlock();
-
     node->WLatch();
     transaction->AddIntoPageSet(node);
   } else {
@@ -356,7 +355,6 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
       }
       root_latch_.unlock();
     }
-
     transaction->AddIntoPageSet(node);
     if (node == nullptr) {
       throw "error";
@@ -438,6 +436,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     buffer_pool_manager_->UnpinPage(page_1->GetPageId(), true);
     UnlockWholeLatches(1, true, transaction);
   }
+
   return true;
 }
 
@@ -804,10 +803,10 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
     }
     root_latch_.unlock();
     if (!t) {
-      c_page->WUnlatch();
+      c_page->RUnlatch();
       buffer_pool_manager_->UnpinPage(c_page->GetPageId(), false);
       c_page = buffer_pool_manager_->FetchPage(root_page_id);
-      c_page->WLatch();
+      c_page->RLatch();
     }
     root_latch_.lock();
     if (root_page_id == root_page_id_) {

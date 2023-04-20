@@ -13,14 +13,21 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "common/util/hash_util.h"
+#include "container/hash/hash_function.h"
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
+#include "execution/expressions/abstract_expression.h"
 #include "execution/plans/hash_join_plan.h"
 #include "storage/table/tuple.h"
+#include "type/value_factory.h"
 
 namespace bustub {
+struct HashJoinKey;
 
 /**
  * HashJoinExecutor executes a nested-loop JOIN on two tables.
@@ -54,6 +61,16 @@ class HashJoinExecutor : public AbstractExecutor {
  private:
   /** The NestedLoopJoin plan node to be executed. */
   const HashJoinPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> left_child_;
+  std::unique_ptr<AbstractExecutor> right_child_;
+  std::unordered_map<HashJoinKey, std::vector<Tuple>> hash_table_;
+  Tuple tuple_left_;
+  RID rid_left_;
+  bool has_vector_;
+  std::vector<Tuple> *right_vector_ptr_;
+  int right_vector_idx_;
 };
 
 }  // namespace bustub
+
+
