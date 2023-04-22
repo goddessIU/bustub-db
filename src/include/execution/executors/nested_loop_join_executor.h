@@ -61,6 +61,7 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
   bool has_get_left_;
   RID rid_left_;
   bool has_join_;
+  bool has_optimized_;
 };
 
 }  // namespace bustub

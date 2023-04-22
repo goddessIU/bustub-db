@@ -14,6 +14,7 @@
 #include "binder/table_ref/bound_join_ref.h"
 #include "common/exception.h"
 #include "execution/expressions/logic_expression.h"
+#include "execution/plans/mock_scan_plan.h"
 
 namespace bustub {
 
@@ -32,7 +33,19 @@ NestedLoopJoinExecutor::NestedLoopJoinExecutor(ExecutorContext *exec_ctx, const 
   }
 }
 
-void NestedLoopJoinExecutor::Init() { left_executor_->Init(); }
+void NestedLoopJoinExecutor::Init() {
+  left_executor_->Init();
+  has_optimized_ = false;
+  auto &t1 = left_executor_->GetOutputSchema();
+  auto &t2 = plan_->OutputSchema();
+  int sz = t1.GetColumnCount();
+  for (int i = 0; i < sz; i++) {
+    if (t1.GetColumn(i).GetName() != t2.GetColumn(i).GetName()) {
+      has_optimized_ = true;
+      break;
+    }
+  }
+}
 
 auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   const AbstractExpression *judge_expr_ptr = &(plan_->Predicate());
@@ -51,8 +64,15 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       }
 
       while (right_executor_->Next(&tuple_right, &rid_right)) {
-        auto value = judge_expr_ptr->EvaluateJoin(&tuple_left_, left_executor_->GetOutputSchema(), &tuple_right,
-                                                  right_executor_->GetOutputSchema());
+        Value value;
+        if (has_optimized_) {
+          value = judge_expr_ptr->EvaluateJoin(&tuple_right, right_executor_->GetOutputSchema(), &tuple_left_,
+                                               left_executor_->GetOutputSchema());
+        } else {
+          value = judge_expr_ptr->EvaluateJoin(&tuple_left_, left_executor_->GetOutputSchema(), &tuple_right,
+                                               right_executor_->GetOutputSchema());
+        }
+
         if (!value.IsNull() && value.GetAs<bool>()) {
           std::vector<Value> vec;
           int col_left_num = left_executor_->GetOutputSchema().GetColumnCount();
@@ -61,13 +81,24 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
           vec.resize(col_left_num + col_right_num);
           int idx = 0;
 
-          for (int i = 0; i < col_left_num; i++) {
-            vec[idx++] = tuple_left_.GetValue(&(left_executor_->GetOutputSchema()), i);
+          if (has_optimized_) {
+            for (int i = 0; i < col_right_num; i++) {
+              vec[idx++] = tuple_right.GetValue(&(right_executor_->GetOutputSchema()), i);
+            }
+
+            for (int i = 0; i < col_left_num; i++) {
+              vec[idx++] = tuple_left_.GetValue(&(left_executor_->GetOutputSchema()), i);
+            }
+          } else {
+            for (int i = 0; i < col_left_num; i++) {
+              vec[idx++] = tuple_left_.GetValue(&(left_executor_->GetOutputSchema()), i);
+            }
+
+            for (int i = 0; i < col_right_num; i++) {
+              vec[idx++] = tuple_right.GetValue(&(right_executor_->GetOutputSchema()), i);
+            }
           }
 
-          for (int i = 0; i < col_right_num; i++) {
-            vec[idx++] = tuple_right.GetValue(&(right_executor_->GetOutputSchema()), i);
-          }
           *tuple = {vec, &(plan_->OutputSchema())};
           *rid = tuple->GetRid();
           return true;

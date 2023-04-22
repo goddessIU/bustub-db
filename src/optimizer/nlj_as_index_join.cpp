@@ -14,7 +14,6 @@
 #include "execution/plans/hash_join_plan.h"
 #include "execution/plans/nested_index_join_plan.h"
 #include "execution/plans/nested_loop_join_plan.h"
-#include "execution/plans/hash_join_plan.h"
 #include "execution/plans/projection_plan.h"
 #include "execution/plans/seq_scan_plan.h"
 #include "optimizer/optimizer.h"

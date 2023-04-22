@@ -93,6 +93,11 @@ select v4, v5, v4+v5+count(*), sum(v1+v2), min(v3+v4), count(*) from t1 group by
 1 233 334 15400 1 100
 0 233 333 5400 0 100
 
+statement ok
+explain select v4, v5, v4+v5+count(*), sum(v1+v2), min(v3+v4), count(*) from t1
+            group by v4, v5
+            having v4 > 5 and sum(v2) < 80000;
+
 query rowsort
 select v4, v5, v4+v5+count(*), sum(v1+v2), min(v3+v4), count(*) from t1
     group by v4, v5

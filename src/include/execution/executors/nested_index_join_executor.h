@@ -55,5 +55,6 @@ class NestIndexJoinExecutor : public AbstractExecutor {
   BPlusTreeIndexForOneIntegerColumn *tree_;
   IndexIterator<IntegerKeyType, IntegerValueType, IntegerComparatorType> itr_ptr_;
   TableInfo *table_info_;
+  bool has_optimized_;
 };
 }  // namespace bustub

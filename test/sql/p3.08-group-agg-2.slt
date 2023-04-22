@@ -58,6 +58,11 @@ select distinct * from (
 ----
 1000 18000 31998000 30
 
+statement ok
+explain select v6, count(v6) + count(*) from (
+            select distinct v6 from __mock_agg_input_big
+        ) group by v6;
+
 query rowsort
 select v6, count(v6) + count(*) from (
     select distinct v6 from __mock_agg_input_big

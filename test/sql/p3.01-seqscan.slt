@@ -28,6 +28,10 @@ select * from test_simple_seq_2;
 8 18
 9 19
 
+statement ok
+explain select col2, col1 from test_simple_seq_2;
+
+
 query
 select col2, col1 from test_simple_seq_2;
 ----

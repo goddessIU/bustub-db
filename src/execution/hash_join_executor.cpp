@@ -41,7 +41,16 @@ void HashJoinExecutor::Init() {
   Tuple tuple_right;
   RID rid_right;
 
-  //  std::cout << "abc" << std::endl;
+  has_optimized_ = false;
+  auto &t1 = left_child_->GetOutputSchema();
+  auto &t2 = plan_->OutputSchema();
+  int sz = t1.GetColumnCount();
+  for (int i = 0; i < sz; i++) {
+    if (t1.GetColumn(i).GetName() != t2.GetColumn(i).GetName()) {
+      has_optimized_ = true;
+      break;
+    }
+  }
 
   while (right_child_->Next(&tuple_right, &rid_right)) {
     auto right_key = plan_->RightJoinKeyExpression().Evaluate(&tuple_right, right_child_->GetOutputSchema());
@@ -52,15 +61,6 @@ void HashJoinExecutor::Init() {
 
     hash_table_[find_key].push_back(tuple_right);
   }
-  //  std::cout << "size is " << ht_.size() << std::endl;
-
-  //  std::cout << "efg" << std::endl;
-  // Optimizer opt_temp(*(exec_ctx_->GetCatalog()), true);
-  // opt_temp
-
-  // build the hash table, so the data structure and the operation?
-
-  // left child next until no more tuple, and insert into table
 }
 
 auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
@@ -80,7 +80,6 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         std::vector<Value> vec(left_num + right_num);
         for (int i = 0; i < left_num; i++) {
           vec[idx++] = tuple_left_.GetValue(&(left_child_->GetOutputSchema()), i);
-          //        vec[idx++] = ht_[find_key].GetValue(&(left_child_->GetOutputSchema()), i);
         }
         for (int i = 0; i < right_num; i++) {
           vec[idx++] = right_vector_ptr_->at(right_vector_idx_).GetValue(&(right_child_->GetOutputSchema()), i);
@@ -101,23 +100,6 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         has_vector_ = true;
         right_vector_idx_ = -1;
         right_vector_ptr_ = &(hash_table_[find_key]);
-
-        //        int idx = 0;
-        //        int left_num = left_child_->GetOutputSchema().GetColumnCount();
-        //        int right_num = right_child_->GetOutputSchema().GetColumnCount();
-        //        std::vector<Value> vec(left_num + right_num);
-        //        for (int i = 0; i < left_num; i++) {
-        //          vec[idx++] = tuple_left_.GetValue(&(left_child_->GetOutputSchema()), i);
-        //          //        vec[idx++] = ht_[find_key].GetValue(&(left_child_->GetOutputSchema()), i);
-        //        }
-        //        for (int i = 0; i < right_num; i++) {
-        //          vec[idx++] = ht_[find_key].GetValue(&(right_child_->GetOutputSchema()), i);
-        //        }
-        //
-        //        *tuple = {vec, &(plan_->OutputSchema())};
-        //        *rid = tuple->GetRid();
-        //        has_get_left_ = false;
-        //        return true;
       } else if (plan_->GetJoinType() == JoinType::LEFT) {
         int idx = 0;
         int left_num = left_child_->GetOutputSchema().GetColumnCount();
@@ -125,11 +107,9 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         std::vector<Value> vec(left_num + right_num);
         for (int i = 0; i < left_num; i++) {
           vec[idx++] = tuple_left_.GetValue(&(left_child_->GetOutputSchema()), i);
-          //        vec[idx++] = ht_[find_key].GetValue(&(left_child_->GetOutputSchema()), i);
         }
         for (int i = 0; i < right_num; i++) {
           vec[idx++] = ValueFactory::GetNullValueByType(right_child_->GetOutputSchema().GetColumn(i).GetType());
-          //        vec[idx++] = ht_[find_key].GetValue(&(right_child_->GetOutputSchema()), i);
         }
 
         *tuple = {vec, &(plan_->OutputSchema())};
@@ -138,8 +118,6 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       }
     }
   }
-
-  return false;
 }
 
 }  // namespace bustub

@@ -26,6 +26,18 @@ NestIndexJoinExecutor::NestIndexJoinExecutor(ExecutorContext *exec_ctx, const Ne
 
 void NestIndexJoinExecutor::Init() {
   child_executor_->Init();
+
+  has_optimized_ = false;
+  auto &t1 = child_executor_->GetOutputSchema();
+  auto &t2 = plan_->OutputSchema();
+  int sz = t1.GetColumnCount();
+  for (int i = 0; i < sz; i++) {
+    if (t1.GetColumn(i).GetName() != t2.GetColumn(i).GetName()) {
+      has_optimized_ = true;
+      break;
+    }
+  }
+
   auto oid = plan_->GetIndexOid();
   index_ptr_ = exec_ctx_->GetCatalog()->GetIndex(oid);
   tree_ = dynamic_cast<BPlusTreeIndexForOneIntegerColumn *>(index_ptr_->index_.get());
@@ -69,21 +81,40 @@ auto NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       for (auto &res : result) {
         table_info_->table_->GetTuple(res, &tuple_right, exec_ctx_->GetTransaction());
         Tuple join_tuple;
-        auto val = judge_expr_ptr->EvaluateJoin(&tuple_left, child_executor_->GetOutputSchema(), &tuple_right,
-                                                table_info_->schema_);
+
+        Value val;
+        if (has_optimized_) {
+          val = judge_expr_ptr->EvaluateJoin(&tuple_right, table_info_->schema_, &tuple_left,
+                                             child_executor_->GetOutputSchema());
+        } else {
+          val = judge_expr_ptr->EvaluateJoin(&tuple_left, child_executor_->GetOutputSchema(), &tuple_right,
+                                             table_info_->schema_);
+        }
+
         std::vector<Value> vec;
         int col_left_num = child_executor_->GetOutputSchema().GetColumnCount();
         int col_right_num = table_info_->schema_.GetColumnCount();
         vec.resize(col_right_num + col_left_num);
         int idx = 0;
 
-        for (int i = 0; i < col_left_num; i++) {
-          vec[idx++] = tuple_left.GetValue(&(child_executor_->GetOutputSchema()), i);
+        if (has_optimized_) {
+          for (int i = 0; i < col_right_num; i++) {
+            vec[idx++] = tuple_right.GetValue(&(table_info_->schema_), i);
+          }
+
+          for (int i = 0; i < col_left_num; i++) {
+            vec[idx++] = tuple_left.GetValue(&(child_executor_->GetOutputSchema()), i);
+          }
+        } else {
+          for (int i = 0; i < col_left_num; i++) {
+            vec[idx++] = tuple_left.GetValue(&(child_executor_->GetOutputSchema()), i);
+          }
+
+          for (int i = 0; i < col_right_num; i++) {
+            vec[idx++] = tuple_right.GetValue(&(table_info_->schema_), i);
+          }
         }
 
-        for (int i = 0; i < col_right_num; i++) {
-          vec[idx++] = tuple_right.GetValue(&(table_info_->schema_), i);
-        }
         *tuple = {vec, &(plan_->OutputSchema())};
         *rid = tuple->GetRid();
         return true;

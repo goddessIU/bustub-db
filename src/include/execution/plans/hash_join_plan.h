@@ -82,34 +82,4 @@ class HashJoinPlanNode : public AbstractPlanNode {
                        right_key_expression_);
   }
 };
-
-/** HashJoinKey represents a key in an hash join operation */
-struct HashJoinKey {
-  /** The hash join key */
-  Value val_;
-
-  HashJoinKey() = default;
-
-  /**
-   * Compares two hash join keys for equality.
-   * @param other the other hash join key to be compared with
-   * @return `true` if both hash join keys have equivalent hash join expressions, `false` otherwise
-   */
-  auto operator==(const HashJoinKey &other) const -> bool { return val_.CompareEquals(other.val_) == CmpBool::CmpTrue; }
-};
 }  // namespace bustub
-
-namespace std {
-
-/** Implements std::hash on AggregateKey */
-template <>
-struct hash<bustub::HashJoinKey> {
-  auto operator()(const bustub::HashJoinKey &hash_join_key) const -> std::size_t {
-    size_t curr_hash = 0;
-    const auto &key = hash_join_key.val_;
-    curr_hash = bustub::HashUtil::CombineHashes(curr_hash, bustub::HashUtil::HashValue(&key));
-    return curr_hash;
-  }
-};
-
-}  // namespace std

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -94,6 +95,23 @@ class Optimizer {
    */
   auto OptimizeSortLimitAsTopN(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
 
+  /**
+   * @brief push down the filter equal predicate
+   */
+  auto OptimizeFilterPushDown(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto FindFilterPredicate(AbstractExpressionRef &expression, AbstractExpressionRef &left_tree,
+                           AbstractExpressionRef &right_tree, int border, AbstractExpressionRef &middle_tree) -> void;
+
+  auto CollectColumnIdxes(const AbstractExpressionRef &expression, std::set<int> &idxes) -> void;
+  auto OptimizeColumnPruningHelper(const AbstractPlanNodeRef &plan, std::set<int> &idxes, bool started) -> void;
+  auto OptimizeColumnPruning(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto ExpressionElimination(AbstractExpressionRef &expression) -> AbstractExpressionRef;
+  auto OptimizeExpressionElimination(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+
+  auto OptimizeSwapTable(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
+  auto OptimizeReorderTable(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef;
   /**
    * @brief get the estimated cardinality for a table based on the table name. Useful when join reordering. BusTub
    * doesn't support statistics for now, so it's the only way for you to get the table size :(
