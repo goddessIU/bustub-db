@@ -64,20 +64,21 @@ class LockManager {
   class LockRequestQueue {
    public:
     /** List of lock requests for the same resource (table or row) */
-    std::list<LockRequest *> request_queue_;
+//    std::list<LockRequest *> request_queue_;
+    std::list<std::shared_ptr<LockRequest>> request_queue_;
     /** For notifying blocked transactions on this rid */
     std::condition_variable cv_;
     /** txn_id of an upgrading transaction (if any) */
     txn_id_t upgrading_ = INVALID_TXN_ID;
-    LockMode old_mode;
+    //    LockMode old_mode;
 
     /** coordination */
     std::mutex latch_;
 
-    // is ix s six x
-    std::vector<int> lck_counter_{0, 0, 0, 0, 0};
-    //
-    std::unordered_set<txn_id_t> fifo_set_{};
+    //    // is ix s six x
+    //    std::vector<int> lck_counter_{0, 0, 0, 0, 0};
+    //    //
+    //    std::unordered_set<txn_id_t> fifo_set_{};
   };
 
   /**
@@ -239,14 +240,10 @@ class LockManager {
    */
   auto UnlockTable(Transaction *txn, const table_oid_t &oid) -> bool;
 
-  auto CanGetLock(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid, LockMode lock_mode)
+  auto IsCompatible(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid, LockMode lock_mode)
       -> bool;
-  auto CanGetLockForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
-                        LockMode lock_mode, const RID &rid) -> bool;
-  auto CanUpgrade(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid, LockMode lock_mode,
-                  txn_id_t tid) -> bool;
-  auto CanUpgradeForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
-                        LockMode lock_mode, txn_id_t tid, const RID &rid) -> bool;
+  auto IsCompatibleForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
+                          LockMode lock_mode, const RID& rid) -> bool;
 
   /**
    * Acquire a lock on rid in the given lock_mode.
