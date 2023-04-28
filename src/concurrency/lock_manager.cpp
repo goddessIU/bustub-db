@@ -220,7 +220,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
   auto request = std::make_shared<LockRequest>(txn->GetTransactionId(), lock_mode, oid);
 
   bool can_granted = true;
-  for (auto t : l_queue->request_queue_) {
+  for (const auto& t : l_queue->request_queue_) {
     if (!t->granted_) {
       can_granted = false;
       break;
@@ -568,7 +568,7 @@ auto LockManager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_
   auto request = std::make_shared<LockRequest>(txn->GetTransactionId(), lock_mode, oid, rid);
 
   bool can_granted = true;
-  for (auto t : l_queue->request_queue_) {
+  for (const auto& t : l_queue->request_queue_) {
     if (!t->granted_) {
       can_granted = false;
       break;
@@ -603,7 +603,7 @@ auto LockManager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_
     } else {
       auto itr = l_queue->request_queue_.begin();
       while (itr != l_queue->request_queue_.end()) {
-        if ((*itr)->granted_ == false) {
+        if (!((*itr)->granted_)) {
           break;
         }
         itr++;
@@ -863,7 +863,7 @@ auto LockManager::GetEdgeList() -> std::vector<std::pair<txn_id_t, txn_id_t>> {
     txn_id_t t1 = t.first;
 
     for (const auto &t2 : t.second) {
-      edges.push_back({t1, t2});
+      edges.emplace_back(t1, t2);
     }
   }
   return edges;
@@ -879,7 +879,6 @@ void LockManager::RunCycleDetection() {
       waits_for_.clear();
 
       txn_id_t txn_id;
-      //      std::unordered_set<txn_id_t> aborted_it{};
 
       {
         std::cout << "table" << std::endl;
@@ -893,23 +892,12 @@ void LockManager::RunCycleDetection() {
           std::unique_lock<std::mutex> table_lock(t.second->latch_);
           std::cout << "qqq" << std::endl;
 
-          for (auto id : (*(t.second)).request_queue_) {
+          for (const auto& id : (*(t.second)).request_queue_) {
             std::cout << "ddd" << std::endl;
             std::cout << "the id " << (*id).txn_id_ << std::endl;
             auto ttt = TransactionManager::GetTransaction((*id).txn_id_);
             std::cout << "mm " << std::endl;
             std::cout << (ttt == nullptr) << std::endl;
-            //            if (ttt) {
-            //            if (ttt && ttt->GetState() == TransactionState::ABORTED) {
-            //              std::cout << "aborted id " << (*id).txn_id_ << std::endl;
-            //              continue ;
-            //            }
-            //            auto ddd = ttt->GetState();
-            //            std::cout << "ff" << std::endl;
-            //            if (ddd == TransactionState::ABORTED) {
-            //              std::cout << "aborted id " << (*id).txn_id_ << std::endl;
-            //              continue ;
-            //            }
             std::cout << "hahaha" << std::endl;
             if ((*id).granted_) {
               std::cout << "aaa" << std::endl;
@@ -940,7 +928,7 @@ void LockManager::RunCycleDetection() {
 
           std::unique_lock<std::mutex> lock(t.second->latch_);
 
-          for (auto id : (*(t.second)).request_queue_) {
+          for (const auto& id : (*(t.second)).request_queue_) {
             //            if (TransactionManager::GetTransaction((*id).txn_id_) &&
             //            TransactionManager::GetTransaction((*id).txn_id_)->GetState() == TransactionState::ABORTED) {
             //              continue ;
@@ -976,12 +964,7 @@ void LockManager::RunCycleDetection() {
             bool has_to_notify = false;
 
             std::unique_lock<std::mutex> lock(t.second->latch_);
-            for (auto id : (*(t.second)).request_queue_) {
-              //              if (TransactionManager::GetTransaction((*id).txn_id_)->GetState() ==
-              //              TransactionState::ABORTED) {
-              //                (*id).granted_ = true;
-              //                has_to_notify = true;
-              //              }
+            for (const auto& id : (*(t.second)).request_queue_) {
               if ((*id).txn_id_ == txn_id) {
                 (*id).granted_ = true;
                 has_to_notify = true;
@@ -1024,12 +1007,7 @@ void LockManager::RunCycleDetection() {
             bool has_to_notify = false;
 
             std::unique_lock<std::mutex> lock(t.second->latch_);
-            for (auto id : (*(t.second)).request_queue_) {
-              //              if (TransactionManager::GetTransaction((*id).txn_id_)->GetState() ==
-              //              TransactionState::ABORTED) {
-              //                (*id).granted_ = true;
-              //                has_to_notify = true;
-              //              }
+            for (const auto& id : (*(t.second)).request_queue_) {
               if ((*id).txn_id_ == txn_id) {
                 (*id).granted_ = true;
                 has_to_notify = true;

@@ -292,7 +292,7 @@ class LockManager {
    * @return false if the graph has no cycle, otherwise stores the newest transaction ID in the cycle to txn_id
    */
   auto HasCycle(txn_id_t *txn_id) -> bool;
-  auto CycleHelper(txn_id_t *txn_id, txn_id_t key, std::unordered_set<txn_id_t> &set) -> bool;
+  auto CycleHelper(txn_id_t *txn_id, txn_id_t key, std::unordered_set<txn_id_t> &ids) -> bool;
 
   /**
    * @return all edges in current waits_for graph

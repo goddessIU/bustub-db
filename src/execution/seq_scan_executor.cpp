@@ -72,12 +72,8 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     return false;
   }
 
-  if (exec_ctx_->GetTransaction()->GetIsolationLevel() == IsolationLevel::REPEATABLE_READ) {
-    if (!exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::SHARED,
-                                              plan_->GetTableOid(), (*iter_ptr_)->GetRid())) {
-      throw ExecutionException("cannot lock");
-    }
-  } else if (exec_ctx_->GetTransaction()->GetIsolationLevel() == IsolationLevel::READ_COMMITTED) {
+  if (exec_ctx_->GetTransaction()->GetIsolationLevel() == IsolationLevel::REPEATABLE_READ
+      || exec_ctx_->GetTransaction()->GetIsolationLevel() == IsolationLevel::READ_COMMITTED) {
     if (!exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::SHARED,
                                               plan_->GetTableOid(), (*iter_ptr_)->GetRid())) {
       throw ExecutionException("cannot lock");
