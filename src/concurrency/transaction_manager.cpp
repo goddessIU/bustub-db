@@ -74,6 +74,7 @@ void TransactionManager::Abort(Transaction *txn) {
     if (item.wtype_ == WType::DELETE) {
       table->RollbackDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::INSERT) {
+      std::cout << "walawala" << std::endl;
       // Note that this also releases the lock when holding the page latch.
       table->ApplyDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::UPDATE) {
@@ -107,7 +108,7 @@ void TransactionManager::Abort(Transaction *txn) {
   }
   table_write_set->clear();
   index_write_set->clear();
-
+  std::cout << "ddd" << std::endl;
   // Release all the locks.
   ReleaseLocks(txn);
   // Release the global transaction latch.

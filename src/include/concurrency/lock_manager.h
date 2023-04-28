@@ -64,21 +64,14 @@ class LockManager {
   class LockRequestQueue {
    public:
     /** List of lock requests for the same resource (table or row) */
-//    std::list<LockRequest *> request_queue_;
     std::list<std::shared_ptr<LockRequest>> request_queue_;
     /** For notifying blocked transactions on this rid */
     std::condition_variable cv_;
     /** txn_id of an upgrading transaction (if any) */
     txn_id_t upgrading_ = INVALID_TXN_ID;
-    //    LockMode old_mode;
 
     /** coordination */
     std::mutex latch_;
-
-    //    // is ix s six x
-    //    std::vector<int> lck_counter_{0, 0, 0, 0, 0};
-    //    //
-    //    std::unordered_set<txn_id_t> fifo_set_{};
   };
 
   /**
@@ -243,7 +236,7 @@ class LockManager {
   auto IsCompatible(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid, LockMode lock_mode)
       -> bool;
   auto IsCompatibleForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
-                          LockMode lock_mode, const RID& rid) -> bool;
+                          LockMode lock_mode, const RID &rid) -> bool;
 
   /**
    * Acquire a lock on rid in the given lock_mode.
@@ -299,6 +292,7 @@ class LockManager {
    * @return false if the graph has no cycle, otherwise stores the newest transaction ID in the cycle to txn_id
    */
   auto HasCycle(txn_id_t *txn_id) -> bool;
+  auto CycleHelper(txn_id_t *txn_id, txn_id_t key, std::unordered_set<txn_id_t> &set) -> bool;
 
   /**
    * @return all edges in current waits_for graph

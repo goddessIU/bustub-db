@@ -312,8 +312,7 @@ class Transaction {
    * Set the state of the transaction.
    * @param state new state
    */
-  inline void SetState(TransactionState state) {
-    state_ = state; }
+  inline void SetState(TransactionState state) { state_ = state; }
 
   /** @return the previous LSN */
   inline auto GetPrevLSN() -> lsn_t { return prev_lsn_; }

@@ -68,7 +68,7 @@ void CheckTxnRowLockSize(Transaction *txn, size_t shared_size, size_t exclusive_
 }
 
 // NOLINTNEXTLINE
-TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
+TEST_F(TransactionTest, SimpleInsertRollbackTest) {
   // txn1: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
   // txn1: abort
   // txn2: SELECT * FROM empty_table2;
@@ -78,6 +78,9 @@ TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
 
   auto *txn1 = bustub_->txn_manager_->Begin();
   bustub_->ExecuteSqlTxn("INSERT INTO empty_table2 VALUES(200, 20), (201, 21), (202, 22)", noop_writer, txn1);
+  //  bustub_->ExecuteSqlTxn("SELECT * FROM empty_table2", noop_writer, txn1);
+  //  bustub_->ExecuteSqlTxn("INSERT INTO empty_table2 VALUES(206, 20)", noop_writer, txn1);
+  //  bustub_->txn_manager_->Commit(txn1);
   bustub_->txn_manager_->Abort(txn1);
   delete txn1;
 
@@ -91,7 +94,7 @@ TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(TransactionTest, DISABLED_DirtyReadsTest) {
+TEST_F(TransactionTest, DirtyReadsTest) {
   bustub_->GenerateTestTable();
 
   // txn1: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
@@ -106,6 +109,34 @@ TEST_F(TransactionTest, DISABLED_DirtyReadsTest) {
   bustub_->ExecuteSqlTxn("INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)", noop_writer, txn1);
 
   auto *txn2 = bustub_->txn_manager_->Begin(nullptr, IsolationLevel::READ_UNCOMMITTED);
+  std::stringstream ss;
+  auto writer2 = SimpleStreamWriter(ss, true);
+  bustub_->ExecuteSqlTxn("SELECT * FROM empty_table2", writer2, txn2);
+
+  EXPECT_EQ(ss.str(), "200\t20\t\n201\t21\t\n202\t22\t\n");
+
+  bustub_->txn_manager_->Commit(txn2);
+  delete txn2;
+
+  bustub_->txn_manager_->Abort(txn1);
+  delete txn1;
+}
+
+TEST_F(TransactionTest, DISABLED_DirtyReadsTest2) {
+  bustub_->GenerateTestTable();
+
+  // txn1: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
+  // txn2: SELECT * FROM empty_table2;
+  // txn1: abort
+
+  auto noop_writer = NoopWriter();
+
+  bustub_->ExecuteSql("CREATE TABLE empty_table2 (colA int, colB int)", noop_writer);
+
+  auto *txn1 = bustub_->txn_manager_->Begin(nullptr, IsolationLevel::READ_COMMITTED);
+  bustub_->ExecuteSqlTxn("INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)", noop_writer, txn1);
+
+  auto *txn2 = bustub_->txn_manager_->Begin(nullptr, IsolationLevel::READ_COMMITTED);
   std::stringstream ss;
   auto writer2 = SimpleStreamWriter(ss, true);
   bustub_->ExecuteSqlTxn("SELECT * FROM empty_table2", writer2, txn2);

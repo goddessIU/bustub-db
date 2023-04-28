@@ -61,11 +61,7 @@ void CheckTableLockSizes(Transaction *txn, size_t s_size, size_t x_size, size_t 
   EXPECT_EQ(six_size, txn->GetSharedIntentionExclusiveTableLockSet()->size());
 }
 
-
-
-
-
-//TEST(LockManagerTest, CompatibilityTest1) {
+// TEST(LockManagerTest, CompatibilityTest1) {
 //  LockManager lock_mgr{};
 //  TransactionManager txn_mgr{&lock_mgr};
 //  table_oid_t oid = 0;
@@ -179,89 +175,200 @@ void CheckTableLockSizes(Transaction *txn, size_t s_size, size_t x_size, size_t 
 //
 //
 
-
-
-
-
-
-
-
-
-
-
-
-TEST(LockManagerTest, AbortTest1) {
-  for (int i = 0; i < 1; i++) {
-    LockManager lock_mgr{};
-    TransactionManager txn_mgr{&lock_mgr};
-    table_oid_t oid = 0;
-
-    auto *txn0 = txn_mgr.Begin();
-    auto *txn1 = txn_mgr.Begin();
-    auto *txn2 = txn_mgr.Begin();
-    auto *txn3 = txn_mgr.Begin();
-    auto *txn4 = txn_mgr.Begin();
-    auto *txn5 = txn_mgr.Begin();
-    auto *txn6 = txn_mgr.Begin();
-    auto *txn7 = txn_mgr.Begin();
-    auto *txn8 = txn_mgr.Begin();
-    auto *txn9 = txn_mgr.Begin();
-
-    std::thread t1([&]() {
-      bool res;
-      res = lock_mgr.LockTable(txn0, LockManager::LockMode::EXCLUSIVE, oid);
-      EXPECT_TRUE(res);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      lock_mgr.UnlockTable(txn0, oid);
-      txn_mgr.Commit(txn0);
-      EXPECT_EQ(TransactionState::COMMITTED, txn0->GetState());
-    });
-
-    std::thread t2([&]() {
-      bool res;
-      std::this_thread::sleep_for(std::chrono::milliseconds(30));
-      res = lock_mgr.LockTable(txn1, LockManager::LockMode::EXCLUSIVE, oid);
-      EXPECT_FALSE(res);
-
-      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
-      txn_mgr.Abort(txn1);
-
-    });
-
-    std::thread t3([&]() {
-      bool res;
-      std::this_thread::sleep_for(std::chrono::milliseconds(30));
-      res = lock_mgr.LockTable(txn2, LockManager::LockMode::EXCLUSIVE, oid);
-      EXPECT_TRUE(res);
-      lock_mgr.UnlockTable(txn2, oid);
-      txn_mgr.Commit(txn2);
-      EXPECT_EQ(TransactionState::COMMITTED, txn2->GetState());
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(70));
-    txn1->SetState(TransactionState::ABORTED);
-
-    t1.join();
-    t2.join();
-    t3.join();
-
-    delete txn0;
-    delete txn1;
-    delete txn2;
-  }
-
-}
-
-
-
-
-
-
-
-
-
-
-
+// TEST(LockManagerTest, AbortTest1) {
+//  for (int i = 0; i < 1; i++) {
+//    LockManager lock_mgr{};
+//    TransactionManager txn_mgr{&lock_mgr};
+//    table_oid_t oid = 0;
+//
+//    auto *txn0 = txn_mgr.Begin();
+//    auto *txn1 = txn_mgr.Begin();
+//    auto *txn2 = txn_mgr.Begin();
+//    auto *txn3 = txn_mgr.Begin();
+//    auto *txn4 = txn_mgr.Begin();
+//    auto *txn5 = txn_mgr.Begin();
+//    auto *txn6 = txn_mgr.Begin();
+//    auto *txn7 = txn_mgr.Begin();
+//    auto *txn8 = txn_mgr.Begin();
+//    auto *txn9 = txn_mgr.Begin();
+//
+//    std::thread t1([&]() {
+//      bool res;
+//      res = lock_mgr.LockTable(txn0, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_TRUE(res);
+//      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//      lock_mgr.UnlockTable(txn0, oid);
+//      txn_mgr.Commit(txn0);
+//      EXPECT_EQ(TransactionState::COMMITTED, txn0->GetState());
+//    });
+//
+//    std::thread t2([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn1, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//
+//
+//    });
+//
+//    std::thread t3([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn2, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_TRUE(res);
+//      lock_mgr.UnlockTable(txn2, oid);
+//      txn_mgr.Commit(txn2);
+//      EXPECT_EQ(TransactionState::COMMITTED, txn2->GetState());
+//    });
+//
+//    std::this_thread::sleep_for(std::chrono::milliseconds(70));
+//    txn1->SetState(TransactionState::ABORTED);
+//
+//    t1.join();
+//    t2.join();
+//    t3.join();
+//    txn_mgr.Abort(txn1);
+//
+//
+//
+//    std::thread t4([&]() {
+//      bool res;
+//      res = lock_mgr.LockTable(txn0, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_TRUE(res);
+//      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//      lock_mgr.UnlockTable(txn0, oid);
+//      txn_mgr.Commit(txn0);
+//      EXPECT_EQ(TransactionState::COMMITTED, txn0->GetState());
+//    });
+//
+//    std::thread t5([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn1, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//
+//    });
+//
+//    std::thread t6([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn2, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//    });
+//
+//    std::thread t7([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn3, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//    });
+//
+//    std::thread t8([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn4, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//
+//    });
+//
+//    std::thread t9([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn5, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//    });
+//
+//    std::thread t10([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn6, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//    });
+//
+//    std::thread t11([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn7, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//
+//    });
+//
+//    std::thread t12([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn8, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_FALSE(res);
+//
+//      EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+//    });
+//
+//    std::thread t13([&]() {
+//      bool res;
+//      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+//      res = lock_mgr.LockTable(txn2, LockManager::LockMode::EXCLUSIVE, oid);
+//      EXPECT_TRUE(res);
+//      lock_mgr.UnlockTable(txn2, oid);
+//      txn_mgr.Commit(txn2);
+//      EXPECT_EQ(TransactionState::COMMITTED, txn2->GetState());
+//    });
+//
+//
+//    std::this_thread::sleep_for(std::chrono::milliseconds(70));
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//    txn1->SetState(TransactionState::ABORTED);
+//
+//    t4.join();
+//    t5.join();
+//    t6.join();
+//    t7.join();
+//    t8.join();
+//    t9.join();
+//    t10.join();
+//    t11.join();
+//    t12.join();
+//    t13.join();
+//    txn_mgr.Abort(txn1);
+//
+//    delete txn0;
+//    delete txn1;
+//    delete txn2;
+//    delete txn3;
+//    delete txn4;
+//    delete txn5;
+//    delete txn6;
+//    delete txn7;
+//    delete txn8;
+//    delete txn9;
+//
+//  }
+//
+//}
 
 void TableLockTest1() {
   LockManager lock_mgr{};
@@ -282,7 +389,7 @@ void TableLockTest1() {
     bool res;
     for (const table_oid_t &oid : oids) {
       //      LOG_INFO()
-//            std::cout << "begin lock " << txn_id << "oid " << oid << std::endl;
+      //            std::cout << "begin lock " << txn_id << "oid " << oid << std::endl;
       res = lock_mgr.LockTable(txns[txn_id], LockManager::LockMode::EXCLUSIVE, oid);
       EXPECT_TRUE(res);
       CheckGrowing(txns[txn_id]);
@@ -290,7 +397,7 @@ void TableLockTest1() {
     }
     //    std::cout << 7 << std::endl;
     for (const table_oid_t &oid : oids) {
-//            std::cout << "bgin unlock " << txn_id << "oid " << oid << std::endl;
+      //            std::cout << "bgin unlock " << txn_id << "oid " << oid << std::endl;
       res = lock_mgr.UnlockTable(txns[txn_id], oid);
       EXPECT_TRUE(res);
       CheckShrinking(txns[txn_id]);
@@ -331,15 +438,15 @@ void TableLockUpgradeTest1() {
   table_oid_t oid = 0;
   auto txn1 = txn_mgr.Begin();
 
-//  std::cout << "a" << std::endl;
+  //  std::cout << "a" << std::endl;
   /** Take S lock */
   EXPECT_EQ(true, lock_mgr.LockTable(txn1, LockManager::LockMode::SHARED, oid));
   CheckTableLockSizes(txn1, 1, 0, 0, 0, 0);
-//  std::cout << "a" << std::endl;
+  //  std::cout << "a" << std::endl;
   /** Upgrade S to X */
   EXPECT_EQ(true, lock_mgr.LockTable(txn1, LockManager::LockMode::EXCLUSIVE, oid));
   CheckTableLockSizes(txn1, 0, 1, 0, 0, 0);
-//  std::cout << "a" << std::endl;
+  //  std::cout << "a" << std::endl;
   /** Clean up */
   txn_mgr.Commit(txn1);
   //  std::cout << "t6 " << std::endl;
@@ -467,6 +574,3 @@ void TwoPLTest1() {
 TEST(LockManagerTest, TwoPLTest1) { TwoPLTest1(); }  // NOLINT
 
 }  // namespace bustub
-
-
-

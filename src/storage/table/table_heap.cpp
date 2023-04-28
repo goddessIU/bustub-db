@@ -133,6 +133,7 @@ auto TableHeap::UpdateTuple(const Tuple &tuple, const RID &rid, Transaction *txn
 
 void TableHeap::ApplyDelete(const RID &rid, Transaction *txn) {
   // Find the page which contains the tuple.
+  std::cout << "rid id page is " << rid.GetPageId() << " slot " << rid.GetSlotNum() << std::endl;
   auto page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(rid.GetPageId()));
   BUSTUB_ASSERT(page != nullptr, "Couldn't find a page containing that RID.");
   // Delete the tuple from the page.
