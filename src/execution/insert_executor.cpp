@@ -28,37 +28,8 @@ InsertExecutor::InsertExecutor(ExecutorContext *exec_ctx, const InsertPlanNode *
 void InsertExecutor::Init() {
   auto oid = plan_->TableOid();
   bool res = false;
-  //  const auto &level = exec_ctx_->GetTransaction()->GetIsolationLevel();
   res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(), LockManager::LockMode::INTENTION_EXCLUSIVE,
                                                oid);
-  //  if (level == IsolationLevel::REPEATABLE_READ) {
-  //    if (exec_ctx_->GetTransaction()->IsTableSharedLocked(oid)) {
-  //      res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //      LockManager::LockMode::SHARED_INTENTION_EXCLUSIVE, oid);
-  //    } else if (exec_ctx_->GetTransaction()->IsTableSharedIntentionExclusiveLocked(oid)) {
-  //      res = true;
-  //    } else {
-  //      res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //      LockManager::LockMode::INTENTION_EXCLUSIVE, oid);
-  //    }
-  //    res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //                                                 LockManager::LockMode::INTENTION_EXCLUSIVE, oid);
-  //  } else if (level == IsolationLevel::READ_UNCOMMITTED) {
-  //    res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //                                                 LockManager::LockMode::INTENTION_EXCLUSIVE, oid);
-  //  } else if (level == IsolationLevel::READ_COMMITTED) {
-  //    if (exec_ctx_->GetTransaction()->IsTableSharedLocked(oid)) {
-  //      res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //      LockManager::LockMode::SHARED_INTENTION_EXCLUSIVE, oid);
-  //    } else if (exec_ctx_->GetTransaction()->IsTableSharedIntentionExclusiveLocked(oid)) {
-  //      res = true;
-  //    } else {
-  //      res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //      LockManager::LockMode::INTENTION_EXCLUSIVE, oid);
-  //    }
-  //    res = exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(),
-  //                                                 LockManager::LockMode::INTENTION_EXCLUSIVE, oid);
-  //  }
 
   if (!res) {
     throw ExecutionException("cannot lock");
@@ -99,11 +70,6 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     std::vector<Value> vec{Value(TypeId::INTEGER, inserted_num_)};
     *tuple = Tuple(vec, &(plan_->OutputSchema()));
     is_first_ = true;
-    //    exec_ctx_->GetLockManager()->UnlockTable(exec_ctx_->GetTransaction(), plan_->table_oid_);
-    //    const auto& level = exec_ctx_->GetTransaction()->GetIsolationLevel();
-    //    if (level == IsolationLevel::READ_COMMITTED) {
-    //      exec_ctx_->GetLockManager()->UnlockTable(exec_ctx_->GetTransaction(), plan_->table_oid_);
-    //    }
     return true;
   }
 

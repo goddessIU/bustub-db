@@ -67,6 +67,36 @@ auto LockManager::IsCompatible(std::shared_ptr<LockRequestQueue> &queue, const t
   return true;
 }
 
+// auto LockManager::IsCompatibleForRow(const std::shared_ptr<LockManager::LockRequestQueue>& queue, const table_oid_t
+// &oid,
+//                                     LockMode lock_mode, const RID &rid) -> bool {
+//  int s_num = 0;
+//  int x_num = 0;
+//  for (const auto &t : queue->request_queue_) {
+//    if (!t->granted_) {
+//      break;
+//    }
+//
+//    if (t->lock_mode_ == LockMode::SHARED) {
+//      s_num++;
+//    } else if (t->lock_mode_ == LockMode::EXCLUSIVE) {
+//      x_num++;
+//    }
+//  }
+//
+//  if (lock_mode == LockMode::SHARED) {
+//    if (x_num > 0) {
+//      return false;
+//    }
+//  } else if (lock_mode == LockMode::EXCLUSIVE) {
+//    if (s_num > 0 || x_num > 0) {
+//      return false;
+//    }
+//  }
+//
+//  return true;
+//}
+
 auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
   //  std::cout << "lock table "
   //            << "txn " << txn->GetTransactionId() << "oid " << oid << "lock mode " << (int)(lock_mode) << std::endl;
@@ -726,6 +756,7 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
       t++;
     }
 
+    //    while (t != l_queue->request_queue_.end() && IsCompatibleForRow(l_queue, oid, (*t)->lock_mode_, rid)) {
     while (t != l_queue->request_queue_.end() && IsCompatible(l_queue, oid, (*t)->lock_mode_)) {
       (*t)->granted_ = true;
       t++;
