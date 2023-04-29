@@ -17,8 +17,10 @@
 #include "concurrency/transaction_manager.h"
 
 namespace bustub {
-auto LockManager::IsCompatible(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
-                               LockMode lock_mode) -> bool {
+//auto LockManager::IsCompatible(const std::shared_ptr<LockManager::LockRequestQueue>& queue, const table_oid_t &oid,
+//                               LockMode lock_mode) -> bool {
+auto LockManager::IsCompatible(LockManager::LockRequestQueue* queue, const table_oid_t &oid,
+                                 LockMode lock_mode) -> bool {
   int s_num = 0;
   int x_num = 0;
   int is_num = 0;
@@ -260,7 +262,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
     } else {
       auto itr = l_queue->request_queue_.begin();
       while (itr != l_queue->request_queue_.end()) {
-        if ((*itr)->granted_ == false) {
+        if ((!(*itr)->granted_)) {
           break;
         }
         itr++;
@@ -289,11 +291,11 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
     l_queue->upgrading_ = INVALID_TXN_ID;
   }
 
-  std::cout << "pprint queue " << std::endl;
-  for (auto t : l_queue->request_queue_) {
-    std::cout << t->txn_id_ << "  ";
-  }
-  std::cout << "ok" << std::endl;
+  //  std::cout << "pprint queue " << std::endl;
+  //  for (auto t : l_queue->request_queue_) {
+  //    std::cout << t->txn_id_ << "  ";
+  //  }
+  //  std::cout << "ok" << std::endl;
 
   // bookkeeping
   if (lock_mode == LockMode::INTENTION_SHARED) {
@@ -308,11 +310,11 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
     txn->GetSharedIntentionExclusiveTableLockSet()->insert(oid);
   }
 
-  std::cout << "ppprint queue " << std::endl;
-  for (auto t : l_queue->request_queue_) {
-    std::cout << t->txn_id_ << "  ";
-  }
-  std::cout << "ok" << std::endl;
+  //  std::cout << "ppprint queue " << std::endl;
+  //  for (auto t : l_queue->request_queue_) {
+  //    std::cout << t->txn_id_ << "  ";
+  //  }
+  //  std::cout << "ok" << std::endl;
 
   if (txn->GetState() == TransactionState::ABORTED) {
     std::cout << "aborted10 " << txn->GetTransactionId() << std::endl;
@@ -354,11 +356,11 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
     l_queue->cv_.notify_all();
     std::cout << "abort finish" << std::endl;
 
-    std::cout << "print queue " << std::endl;
-    for (auto t : l_queue->request_queue_) {
-      std::cout << t->txn_id_ << "  ";
-    }
-    std::cout << "ok" << std::endl;
+    //    std::cout << "print queue " << std::endl;
+    //    for (auto t : l_queue->request_queue_) {
+    //      std::cout << t->txn_id_ << "  ";
+    //    }
+    //    std::cout << "ok" << std::endl;
     return false;
   }
   std::cout << "finish lock" << std::endl;
@@ -822,11 +824,11 @@ auto LockManager::CycleHelper(txn_id_t *txn_id, txn_id_t key, std::unordered_set
     if (ids.count(t) == 1) {
       *txn_id = key;
       return true;
-    } else {
-      ids.insert(t);
-      if (CycleHelper(txn_id, t, ids)) {
-        return true;
-      }
+    }
+
+    ids.insert(t);
+    if (CycleHelper(txn_id, t, ids)) {
+      return true;
     }
   }
 

@@ -233,8 +233,8 @@ class LockManager {
    */
   auto UnlockTable(Transaction *txn, const table_oid_t &oid) -> bool;
 
-  auto IsCompatible(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid, LockMode lock_mode)
-      -> bool;
+  auto IsCompatible(LockManager::LockRequestQueue* queue, const table_oid_t &oid,
+                    LockMode lock_mode) -> bool;
   auto IsCompatibleForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
                           LockMode lock_mode, const RID &rid) -> bool;
 
