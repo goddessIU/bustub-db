@@ -17,10 +17,8 @@
 #include "concurrency/transaction_manager.h"
 
 namespace bustub {
-//auto LockManager::IsCompatible(const std::shared_ptr<LockManager::LockRequestQueue>& queue, const table_oid_t &oid,
-//                               LockMode lock_mode) -> bool {
-auto LockManager::IsCompatible(LockManager::LockRequestQueue* queue, const table_oid_t &oid,
-                                 LockMode lock_mode) -> bool {
+auto LockManager::IsCompatible(std::shared_ptr<LockRequestQueue> &queue, const table_oid_t &oid, LockMode lock_mode)
+    -> bool {
   int s_num = 0;
   int x_num = 0;
   int is_num = 0;
@@ -62,35 +60,6 @@ auto LockManager::IsCompatible(LockManager::LockRequestQueue* queue, const table
     }
   } else if (lock_mode == LockMode::INTENTION_SHARED) {
     if (x_num > 0) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-auto LockManager::IsCompatibleForRow(std::shared_ptr<LockManager::LockRequestQueue> queue, const table_oid_t &oid,
-                                     LockMode lock_mode, const RID &rid) -> bool {
-  int s_num = 0;
-  int x_num = 0;
-  for (const auto &t : queue->request_queue_) {
-    if (!t->granted_) {
-      break;
-    }
-
-    if (t->lock_mode_ == LockMode::SHARED) {
-      s_num++;
-    } else if (t->lock_mode_ == LockMode::EXCLUSIVE) {
-      x_num++;
-    }
-  }
-
-  if (lock_mode == LockMode::SHARED) {
-    if (x_num > 0) {
-      return false;
-    }
-  } else if (lock_mode == LockMode::EXCLUSIVE) {
-    if (s_num > 0 || x_num > 0) {
       return false;
     }
   }
@@ -222,7 +191,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
   auto request = std::make_shared<LockRequest>(txn->GetTransactionId(), lock_mode, oid);
 
   bool can_granted = true;
-  for (const auto& t : l_queue->request_queue_) {
+  for (const auto &t : l_queue->request_queue_) {
     if (!t->granted_) {
       can_granted = false;
       break;
@@ -570,14 +539,15 @@ auto LockManager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_
   auto request = std::make_shared<LockRequest>(txn->GetTransactionId(), lock_mode, oid, rid);
 
   bool can_granted = true;
-  for (const auto& t : l_queue->request_queue_) {
+  for (const auto &t : l_queue->request_queue_) {
     if (!t->granted_) {
       can_granted = false;
       break;
     }
   }
 
-  if (l_queue->request_queue_.empty() || (can_granted && IsCompatibleForRow(l_queue, oid, lock_mode, rid))) {
+  //  if (l_queue->request_queue_.empty() || (can_granted && IsCompatibleForRow(l_queue, oid, lock_mode, rid))) {
+  if (l_queue->request_queue_.empty() || (can_granted && IsCompatible(l_queue, oid, lock_mode))) {
     request->granted_ = true;
   }
 
@@ -756,7 +726,7 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
       t++;
     }
 
-    while (t != l_queue->request_queue_.end() && IsCompatibleForRow(l_queue, oid, (*t)->lock_mode_, rid)) {
+    while (t != l_queue->request_queue_.end() && IsCompatible(l_queue, oid, (*t)->lock_mode_)) {
       (*t)->granted_ = true;
       t++;
     }
@@ -894,7 +864,7 @@ void LockManager::RunCycleDetection() {
           std::unique_lock<std::mutex> table_lock(t.second->latch_);
           std::cout << "qqq" << std::endl;
 
-          for (const auto& id : (*(t.second)).request_queue_) {
+          for (const auto &id : (*(t.second)).request_queue_) {
             std::cout << "ddd" << std::endl;
             std::cout << "the id " << (*id).txn_id_ << std::endl;
             auto ttt = TransactionManager::GetTransaction((*id).txn_id_);
@@ -930,7 +900,7 @@ void LockManager::RunCycleDetection() {
 
           std::unique_lock<std::mutex> lock(t.second->latch_);
 
-          for (const auto& id : (*(t.second)).request_queue_) {
+          for (const auto &id : (*(t.second)).request_queue_) {
             //            if (TransactionManager::GetTransaction((*id).txn_id_) &&
             //            TransactionManager::GetTransaction((*id).txn_id_)->GetState() == TransactionState::ABORTED) {
             //              continue ;
@@ -966,7 +936,7 @@ void LockManager::RunCycleDetection() {
             bool has_to_notify = false;
 
             std::unique_lock<std::mutex> lock(t.second->latch_);
-            for (const auto& id : (*(t.second)).request_queue_) {
+            for (const auto &id : (*(t.second)).request_queue_) {
               if ((*id).txn_id_ == txn_id) {
                 (*id).granted_ = true;
                 has_to_notify = true;
@@ -1009,7 +979,7 @@ void LockManager::RunCycleDetection() {
             bool has_to_notify = false;
 
             std::unique_lock<std::mutex> lock(t.second->latch_);
-            for (const auto& id : (*(t.second)).request_queue_) {
+            for (const auto &id : (*(t.second)).request_queue_) {
               if ((*id).txn_id_ == txn_id) {
                 (*id).granted_ = true;
                 has_to_notify = true;
