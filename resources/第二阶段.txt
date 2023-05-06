@@ -1,3 +1,4 @@
 1. book
 2. lab历年重写
 3.复习基础
+4. 结合编译原理，再去理解leafpage这些是怎么按顺序的写在raw page的data字段上；就是leafpage的底层
